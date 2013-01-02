@@ -60,7 +60,7 @@ public:
   
   char                  id;             // Chain id
   vector<AminoAcid>     aa;             // Vector of atoms in this chain
-  vector<Residue>         hetatms;        // Vector of hetatms in this chain
+  vector<Residue>       hetatms;        // Vector of hetatms in this chain
   vector<Seqres*>       seqres;         // Vector of seqres in this chain
 
   // Overloads the == operator
