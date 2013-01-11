@@ -63,6 +63,7 @@ PDB::PDB()
   hetatms.clear();
   seqres.clear();
   ligands.clear();
+  carbonRingLigands.clear();
   conect.clear();
   models.clear();
   ligandsToFind = NULL;
@@ -323,6 +324,8 @@ void PDB::parsePDBstream(istream& PDBfile, float resolution)
 // hydrogens to the residues
 void PDB::addHydrogensToPair(AminoAcid& a, AminoAcid& b, int cd1, int cd2)
 {
+cout << "Adding hydrogens to pair: " << a.residue << ", " << b.residue << endl;
+cout << "  cd1:" << cd1 << ", cd2:" << cd2 << endl;
   OBMol mol;
   string addedH;
   istringstream tempss;
@@ -351,28 +354,46 @@ void PDB::addHydrogensToPair(AminoAcid& a, AminoAcid& b, int cd1, int cd2)
 
   // Now, let's pack up the information into a string
   string packedFile="";
-  for(unsigned int i=0; i < a.altlocs[cd1].size(); i++)
+
+  int cd1_al = cd1;
+  if(a.residue == "ASP" || a.residue == "GLU")
     {
-      if( !a.altlocs[cd1][i]->skip )
+      cd1_al = cd1%(a.altlocs.size());
+    }
+
+cout << " Packed string for " << a.residue << ":" << endl;
+  for(unsigned int i=0; i < a.altlocs[cd1_al].size(); i++)
+    {
+      if( !a.altlocs[cd1_al][i]->skip )
         {
-          packedFile += a.altlocs[cd1][i]->line + "\n";
+cout << "  " << a.altlocs[cd1_al][i]->line << endl;
+          packedFile += a.altlocs[cd1_al][i]->line + "\n";
         }
     }
-  
+
   int cd2_al = cd2;
   if(b.residue == "ASP" || b.residue == "GLU")
     {
       cd2_al = cd2%(b.altlocs.size());
     }
 
+  if (b.altlocs.size() == 0)
+    {
+      cout << "Empty altlocs" << endl;
+    }
+
   for(unsigned int i=0; i < b.altlocs[cd2_al].size(); i++)
     {
       if( !b.altlocs[cd2_al][i]->skip )
         {
+cout << "  " << b.altlocs[cd2_al][i]->line << endl;
             packedFile += b.altlocs[cd2_al][i]->line + "\n";
         }
     }
-  packedFile += a.makeConect(cd1);
+
+//cout << "CONECT string for " << a.residue << ":" << endl;
+//cout << a.makeConect(cd1_al) << endl;
+  packedFile += a.makeConect(cd1_al);
   packedFile += b.makeConect(cd2_al);
 
 
@@ -531,7 +552,7 @@ void PDB::populateChains(bool center)
   chainIndex = -1;
 
   // Go through each hetatm
-  if( ligandsToFind )
+  if( ligandsToFind || keepLigands)
     {
       for(int i = 0; i < hetatms.size(); i++)
         {
@@ -563,10 +584,16 @@ void PDB::populateChains(bool center)
             }
           i--;
           r.residue = hetatms[i].residueName;
-          vector<string>::iterator found1 = find(ligandsToFind->begin(), ligandsToFind->end(), r.residue);
-          if(found1 != ligandsToFind->end())
+//cout << "Residue: " << r.residue << ", altlocs.size(): "<< r.altlocs.size() << endl;
+          if( ligandsToFind )
             {
-              r.calculateCenter(center);
+              vector<string>::iterator found1 = find(ligandsToFind->begin(),
+                                                     ligandsToFind->end(),
+                                                     r.residue);
+              if(found1 != ligandsToFind->end())
+                {
+                  r.calculateCenter(center);
+                }
             }
       
           // Store the reference of the hetatm in the corresponding chain info
@@ -660,6 +687,26 @@ void PDB::findLigands(vector<string> ligandsToFind)
         }
     }
 }
+
+void PDB::findCarbonRingsInLigands()
+{
+  for(int i=0; i<chains.size(); i++)
+    {
+      int hetsize = this->chains[i].hetatms.size();
+      for(int j=0; j<hetsize; j++)
+        {
+          // Check if the current residue contains a carbon ring.
+          // If it does, store the whole ligand.
+          if(this->chains[i].hetatms[j].findCarbonRings()) {
+            cout << "Found a ring!" << endl;
+            carbonRingLigands.push_back(&this->chains[i].hetatms[j]);
+          }
+        }
+    }
+  return;
+}
+
+//void PDB::findCarbonRingLigands
 
 void PDB::sortAtoms()
 {

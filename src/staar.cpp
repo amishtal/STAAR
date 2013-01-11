@@ -87,6 +87,13 @@ void searchLigandsInformation(PDB & PDBfile,
                               Options & opts,
                               ofstream& output_file);
 
+void searchCarbonRingLigandsInformation(PDB & PDBfile,
+                                        Residue & ligand,
+                                        unsigned int chain1,
+                                        string residue1,
+                                        Options & opts,
+                                        ofstream& output_file);
+
 // Finds the closest distance among all of the centers
 // associated with each amino acid
 double findClosestDistance(AminoAcid& aa1,
@@ -191,16 +198,30 @@ bool processSinglePDBFile(const char* filename,
       PDBfile.filename = PDBfile_whole.filename;
       PDBfile.resolution = PDBfile_whole.resolution;
 
+      if( opts.findCarbonRings || opts.numLigands )
+        {
+          PDBfile.keepLigands = true;
+        }
+      else
+        {
+          PDBfile.keepLigands = false;
+        }
+
       PDBfile.setResiduesToFind(&opts.residue1, &opts.residue2);
       if(opts.numLigands)
         {
           PDBfile.setLigandsToFind(&opts.ligands);
         }
+
       PDBfile.populateChains(false);
 
       if( opts.numLigands )
         {
           PDBfile.findLigands( opts.ligands );
+        }
+      if(opts.findCarbonRings)
+        {
+          PDBfile.findCarbonRingsInLigands();
         }
 
       // Searching for interations within each chain
@@ -256,6 +277,20 @@ bool processSinglePDBFile(const char* filename,
                                            opts.residue1[ii],
                                            opts,
                                            output_file);
+                }
+            }
+
+          // Go through the ligands containing carbon rings
+          for(unsigned int j = 0; j<PDBfile.carbonRingLigands.size(); j++)
+            {
+              for(int ii=0; ii<numRes2; ii++)
+                {
+                  searchCarbonRingLigandsInformation(PDBfile,
+                                                     *PDBfile.carbonRingLigands[j],
+                                                     i,
+                                                     opts.residue2[ii],
+                                                     opts,
+                                                     output_file);
                 }
             }
         }
@@ -473,6 +508,79 @@ void searchLigandsInformation(PDB & PDBfile,
     }
 }
 
+void searchCarbonRingLigandsInformation(PDB & PDBfile,
+                                        Residue & ligand,
+                                        unsigned int chain1,
+                                        string residue2,
+                                        Options & opts,
+                                        ofstream& output_file)
+{
+  //cout << "Hey!!!" << endl;
+
+  vector<Coordinates> original_center = ligand.center;
+  vector< vector<Atom*> > original_altlocs = ligand.altlocs;
+
+  //ligand.center.clear();
+  ligand.center = ligand.carbonRingCenters;
+  //ligand.altlocs.clear();
+  ligand.altlocs = ligand.carbonRings;
+
+  Chain* c1 = &(PDBfile.chains[chain1]);
+
+//cout << "Carbon ring ligand altlocs size: " << ligand.altlocs.size() << endl;
+
+  for(int i=0; i<c1->aa.size(); i++)
+    {
+      if(c1->aa[i].residue == residue2 && !(c1->aa[i].skip))
+        {
+          for (int j=0; j<ligand.carbonRingCenters.size(); j++)
+            {
+              // Ignore all the other carbon ring centers except for the jth.
+              for (int ii=0; ii < ligand.carbonRingCenters.size(); ii++)
+                {
+                  ligand.center[ii].skip = true;
+                }
+              ligand.center[j].skip = false;
+
+              cout << "Looking for interaction between carbon ring " << j << " of " << ligand.residue << " and " << residue2 << endl;
+              //ligand.center.push_back(ligand.carbonRingCenters[j]);
+              //ligand.altlocs.push_back(ligand.carbonRings[j]);
+              findBestInteraction(ligand,
+                                  c1->aa[i],
+                                  opts.threshold,
+                                  PDBfile,
+                                  opts.gamessfolder,
+                                  false,
+                                  output_file);
+              //ligand.center.clear();
+              //ligand.altlocs.clear();
+              cout << "Done" << endl;
+            }
+/*
+          for (int j=0; j<ligand.carbonRingCenters.size(); j++)
+            {
+              for (int k=0; k<c1->aa[i].center.size(); k++)
+                {
+                  float dist = ligand.carbonRingCenters[j].distance(c1->aa[i].center[j]);
+          
+                  cout << "Carbon ring distance to residue " << residue2 << " is " << dist << endl;
+                }
+            }
+*/
+        }
+    }
+
+  for (int i=0; i<ligand.center.size(); i++)
+    {
+      ligand.center[i].skip = false;
+    }
+
+  ligand.center = original_center;
+  ligand.altlocs = original_altlocs;
+
+  return;
+}
+
 // Finds the closest distance among all of the centers
 // associated with each amino acid
 double findClosestDistance(AminoAcid& aa1,
@@ -486,6 +594,10 @@ double findClosestDistance(AminoAcid& aa1,
 
   // Go through all combination of distances looking
   // for the closet pair
+  //cout << "aa1.center.size() = " << aa1.center.size() << endl;
+//  cout << "Residue: " << aa1.residue << ", aa1.altlocs.size() = " << aa1.altlocs.size() << endl;
+  //cout << "aa2.center.size() = " << aa2.center.size() << endl;
+//  cout << "Residue: " << aa2.residue << ", aa2.altlocs.size() = " << aa2.altlocs.size() << endl;
   for( unsigned int i = 0; i < aa1.center.size(); i++ )
     {
       if(aa1.center[i].skip) continue;
@@ -541,6 +653,7 @@ void findBestInteraction( AminoAcid& aa1,
   // add hydrogens, and try the process again
   if( closestDist != FLT_MAX )
     {
+      cout << " Closest distance is " << closestDist << endl;
       // Just some codes that were in the original STAAR
       char code1 = 'I';
       if( aa1.atom[0]->chainID != aa2.atom[0]->chainID )
@@ -560,22 +673,36 @@ void findBestInteraction( AminoAcid& aa1,
       
 
       // Add the hydrogens
+      cout << "About to call \'addHydrogensToPair\'" << endl;
       pairWithHydrogen.addHydrogensToPair(aa1,aa2,closestDist_index1,closestDist_index2);
+      cout << "Made it past \'addHydrogensToPair\'" << endl;
 
       // Set the filename
       pairWithHydrogen.filename = PDBfile.filename;
 
       // Separate the pair into 2 variables
+      aa1h = aa1;
+      aa2h = aa2;
+/*
       pairWithHydrogen.getPair(aa1.atom[0]->resSeq,
                                aa2.atom[0]->resSeq,
                                &aa1h,
                                &aa2h,
                                ligand);
+*/
 
       if( aa2h.skip == true || aa1h.skip == true )
         {
           return;
         }
+
+for(int i=0; i<aa1h.center.size();i++) {
+  cout << aa1h.center[i].plane_info.size() << endl;
+  for (int j=0; j < aa1h.center[i].plane_info.size(); j++)
+    cout << aa1h.center[i].plane_info[j] << " ";
+  cout << endl;
+}
+
 
       float dist;
       float distOxy;

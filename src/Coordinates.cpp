@@ -70,6 +70,11 @@ float Coordinates::distance(Coordinates& point)
   return sqrt(t.x + t.y + t.z);
 }
 
+Coordinates Coordinates::midpoint(Coordinates& point)
+{
+  return Coordinates((*this + point) / 2.0); 
+}
+
 float Coordinates::norm()
 {
   return sqrt(x * x + y * y + z * z);

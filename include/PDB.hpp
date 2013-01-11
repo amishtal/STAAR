@@ -127,7 +127,10 @@ public:
 
   // Organizes ligands into an array
   void findLigands(vector<string> ligandsToFind);
-  
+
+  // Finds and stores ligand residues that contain carbon rings
+  void findCarbonRingsInLigands();
+
   void getPair(int& resSeq1, 
                int& resSeq2, 
                Residue* r1, 
@@ -141,6 +144,8 @@ public:
   // Puts the atoms in order by their sequence number
   void sortAtoms();
 
+  bool keepLigands;
+
   vector<string>* ligandsToFind;
   vector<string>* residue1;
   vector<string>* residue2;
@@ -149,6 +154,8 @@ public:
   vector<Atom>            atoms;          // Vector hold all the atom lines
   vector<Atom>            hetatms;        // Vector holding all the hetatm lines
   vector<Residue*>        ligands;        // Vector holding all the ligand lines
+  vector<Residue*>        carbonRingLigands; // Vector holding all the ligands
+                                             // that contain carbon rings
   vector<Seqres>          seqres;         // Vector holding all the seqres lines
   vector<string>          conect;         // Vector holding all the CONECT lines
 

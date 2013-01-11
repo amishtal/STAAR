@@ -66,6 +66,8 @@ public:
   vector<string>residue2;       // ...these!
   vector<string>ligands;        // Ligands that residue1 will be matches with
   int numLigands;               // Number of ligands
+  bool findCarbonRings;         // Flag indicating whether or not to search for carbon
+                                // rings in ligands
   char* gamessfolder;           // Directory in which all of the GAMESS INP files
                                 // will be stored.
   bool outputGamessINP;         // True if GAMESS INP are to be outputted

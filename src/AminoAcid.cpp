@@ -1455,6 +1455,8 @@ void AminoAcid::determineAltLoc(vector<char>&altloc_ids)
 // Calculates the center of the amino acid
 void AminoAcid::calculateCenter(bool centerOfCharge)
 {
+//cout << "calculateCenter: residue=" << residue << ", centerOfCharge=" << centerOfCharge << ", altlocs.size()=" << altlocs.size() << endl;
+
   if( !centerOfCharge )
     {
       // TRP
@@ -1524,6 +1526,120 @@ void AminoAcid::calculateCenter(bool centerOfCharge)
     }
 }
 
+bool AminoAcid::findCarbonRings()
+{
+  bool foundRings = false;
+  const float TARGET_DIST = 2.8;
+
+  vector< vector<Atom*> > pairs;
+  vector<Coordinates> midpoints;
+  //cout << residue << endl;
+
+  // Loop through all pairs of atoms, only considering carbon atoms.
+  // If two carbon atoms are the correct distance apart to be directly
+  // across from each other in a benzene ring, then store that pair
+  // and their midpoint.
+  for(int i=0; i<atom.size(); i++)
+    {
+      Atom * firstCarbon = atom[i];
+      if (firstCarbon->element != " C")
+        {
+          continue;
+        }
+
+      for(int j=i+1; j<atom.size(); j++)
+        {
+          Atom * secondCarbon = atom[j];
+          if (firstCarbon->element != " C")
+            {
+              continue;
+            }
+          float dist = firstCarbon->coord.distance(secondCarbon->coord);
+          //cout << "Distance: " << dist << endl;
+
+          if (dist >= TARGET_DIST - 0.1 && dist <= TARGET_DIST + 0.1)
+            {
+              vector<Atom*> pair;
+              pair.push_back(firstCarbon);
+              pair.push_back(secondCarbon);
+              pairs.push_back(pair);
+
+              midpoints.push_back(firstCarbon->coord.midpoint(secondCarbon->coord));
+            }
+        }
+    }
+
+  // Collect pairs whose midpoints are approximately equal.
+  vector< vector<int> > potential_rings;
+  for(int i=0; i<midpoints.size(); i++)
+    {
+      vector<int> index_set;
+      index_set.push_back(i);
+      for(int j=i+1; j<midpoints.size(); j++)
+        {
+          float dist = midpoints[i].distance(midpoints[j]);
+          if (dist <= 0.3)
+            {
+              index_set.push_back(j);
+            }
+          //cout << dist << endl;
+        }
+      potential_rings.push_back(index_set);
+    }
+
+  // A set of three pairs means a ring. Store the constituent
+  // atoms, find its center, maybe compute it's plane info, and
+  // set the appropriate flag.
+  for(int i=0; i<potential_rings.size(); i++)
+    {
+      vector<int> index_set = potential_rings[i];
+      if (index_set.size() == 3)
+        {
+          foundRings = true;
+          vector<Atom*> newRing;
+          Coordinates ringCenter;
+          for(int j=0; j<3; j++)
+            {
+              ringCenter += midpoints[index_set[j]];
+              vector<Atom*> pair = pairs[index_set[j]];
+              newRing.push_back(pair[0]);
+              newRing.push_back(pair[1]);
+            }
+          ringCenter /= 3.0;
+          ringCenter.skip = false;
+
+          // Get the plane info for this ring. (Not quite sure if
+          // this is correct...)
+          ringCenter.plane_info.resize(3);
+          ringCenter.plane_info[CE2_PLANE_COORD_PTT] = &pairs[index_set[0]][0]->coord;
+          ringCenter.plane_info[CD1_PLANE_COORD_PTT] = &pairs[index_set[0]][1]->coord;
+          Coordinates* coord1 = &pairs[index_set[1]][0]->coord;
+          Coordinates* coord2 = &pairs[index_set[1]][1]->coord;
+          float dist1 = pairs[index_set[0]][1]->coord.distance(*coord1);
+          if (dist1 >= 1.35 || dist1 <= 1.45)
+            {
+              ringCenter.plane_info[CG_PLANE_COORD_PTT] = coord1;
+            }
+          else
+            {
+              ringCenter.plane_info[CG_PLANE_COORD_PTT] = coord2;
+            }
+          carbonRings.push_back(newRing);
+          carbonRingCenters.push_back(ringCenter);
+          center.push_back(ringCenter);
+        }
+    }
+  //cout << "Found " << pairs.size() << " pairs" << endl;
+
+  if (foundRings)
+    {
+      skip = false;
+    }
+ 
+
+  return foundRings;
+}
+
 void AminoAcid::calculateAnglesPreHydrogens(AminoAcid aa2,
                                             int index1,
                                             int index2,
@@ -1575,6 +1691,11 @@ bool AminoAcid::calculateDistancesAndAnglesPostHydrogens(AminoAcid aa2,
                                                          float* angleOxy2)
 {
   AminoAcid aa1 = *this;
+
+cout << "calculateDistancesAndAnglesPostHydrogens for " << residue << " and " << aa2.residue << endl; 
+cout << "length of aa1.center[0].plane_info: " << aa1.center[0].plane_info.size() << endl;
+cout << aa1.center[0].plane_info[0] << " " << endl;
+
 
   // These are the 3 points in the benzene ring determined in centerPHEorTYR_simplified()
   Coordinates dBenzene1 = *aa1.center[0].plane_info[1] - *aa1.center[0].plane_info[0];
@@ -2228,6 +2349,39 @@ string AminoAcid::makeConect2POorPO3()
   return conect;
 }
 
+string AminoAcid::makeConectCarbonRing(int c)
+{
+  string serials[6];
+  string conect = "";
+
+  for(int i=0; i<this->carbonRings[c].size(); i++)
+    {
+      conect += "CONECT" + carbonRings[c][i]->line.substr(6,5);
+
+      int nConnected = 0;
+      for(int j=0; j<this->carbonRings[c].size(); j++)
+        {
+          float dist = carbonRings[c][i]->coord.distance(carbonRings[c][j]->coord);
+          if (dist >= 1.3 && dist <= 1.5)
+            {
+              nConnected++;
+              conect += carbonRings[c][j]->line.substr(6,5);
+            }
+        }
+
+      if (nConnected != 2)
+        {
+          cout << "Problem with carbon ring: One carbon is connected to " << nConnected;
+          cout << " others. " << endl;
+        }
+
+      conect += "      \n";
+      
+    }
+  
+  return conect;
+}
+
 string AminoAcid::makeConect(int c)
 {
   if(residue == "PHE" || residue == "TYR")
@@ -2249,6 +2403,10 @@ string AminoAcid::makeConect(int c)
   else if(residue == "2PO" || residue == "PO3")
     {
       return makeConect2POorPO3();
+    }
+  else if(carbonRings.size() != 0)
+    {
+      return makeConectCarbonRing(c);
     }
 }
 

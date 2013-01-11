@@ -53,6 +53,7 @@ Options::Options()
   threshold       = 7.0;
   numLigands      = 0;
   resolution      = 99999.0;
+  findCarbonRings = false;
 }
 
 // Intialize options then parse the cmd line arguments
@@ -71,6 +72,7 @@ Options::Options( int argc, char **argv )
   chain_list      = NULL;
   extension       = ".pdb.gz";
   resolution      = 99999.0;
+  findCarbonRings = false;
   parseCmdline( argc, argv );
 }
 
@@ -98,6 +100,7 @@ void printHelp()
   cerr << "-l or --ligands       " << "Look for interactions with ligands"                             << endl;
   cerr << "                      " << " add in the residue name looking for in HETATM:"                << endl;
   cerr << "                      " << " \"PO4,2HP,PI,2PO,PO3\""                                        << endl;
+  cerr << "-b or --benzene       " << "Look for interactions involving benzene rings in ligands"       << endl;
   cerr << "-c or --resolution    " << "Resolution cut-off.  Will only look at the PDBs with"           << endl;
   cerr << "                      " << " a resolution <= specified value (default: 2 Angstroms)"        << endl;
 }
@@ -126,6 +129,7 @@ void Options::parseCmdline( int argc, char **argv )
       {"samechain",     no_argument,       0, 's'},
       {"residues",      required_argument, 0, 'r'},
       {"ligands",       required_argument, 0, 'l'},
+      {"benzene",       no_argument,       0, 'b'},
       {"gamess",        required_argument, 0, 'g'},
       {"resolution",    required_argument, 0, 'c'},
       {0, 0, 0, 0}
@@ -133,7 +137,7 @@ void Options::parseCmdline( int argc, char **argv )
   int option_index;
   bool indir = false;
   // Go through the options and set them to variables
-  while( !( ( c = getopt_long(argc, argv, "hp:o:L:C:e:t:sr:l:g:c:", long_options, &option_index) ) < 0 ) )
+  while( !( ( c = getopt_long(argc, argv, "hp:o:L:C:e:t:sr:l:bg:c:",long_options, &option_index) ) < 0 ) )
     {
     switch(c)
       {
@@ -226,6 +230,13 @@ void Options::parseCmdline( int argc, char **argv )
             }
         }
         break;
+
+      case 'b':
+        {
+          // Set the appropriate flag so that we search for carbon rings later.
+          this->findCarbonRings = true;
+          break;
+        }
 
       case 'g':
         {

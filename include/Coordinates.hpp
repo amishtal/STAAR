@@ -76,6 +76,9 @@ public:
   // Computes the distance between this and another point
   float distance( Coordinates& point );
 
+  // Computes the midpoint between this and another point
+  Coordinates midpoint( Coordinates& point );
+
   // Computes the length/norm of a vector
   float norm();
 

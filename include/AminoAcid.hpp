@@ -37,12 +37,12 @@
 #ifndef __AMINOACID_HPP__
 #define __AMINOACID_HPP__
 
-#include <cstdlib>
 #include <cstdio>
-#include <iostream>
+#include <cstdlib>
 #include <fstream>
-#include <vector>
+#include <iostream>
 #include <string>
+#include <vector>
 #include "Atom.hpp"
 
 // This is just because I was dumb before and just called this library
@@ -134,6 +134,7 @@ private:
   string makeConectGLU_altloc(int c);
   string makeConectPO4or2HPorPI();
   string makeConect2POorPO3();
+  string makeConectCarbonRing(int c);
 
 public:
   // constructor
@@ -144,6 +145,8 @@ public:
 
   // Finds the alternate locations
   void determineAltLoc(vector<char>&altloc_ids);
+
+  bool findCarbonRings();
 
   // calculate the center of the AA. Calls the individual
   // functions above depending on AA
@@ -189,7 +192,13 @@ public:
   vector<Atom*> atom;
 
   // holds the calculated centers that will be examined
-  vector<Coordinates>  center;
+  vector<Coordinates> center;
+
+  // Holds the carbon atoms involved in carbon rings.
+  vector< vector<Atom*> > carbonRings;
+  // Holds the centers (and plane info) of the carbon rings
+  // stored in the above vector.
+  vector<Coordinates> carbonRingCenters;
 
   // holds the residue name
   string residue;
