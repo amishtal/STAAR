@@ -241,7 +241,7 @@ float findAngle(Coordinates& point1,
 // residue in question, and the index for the center that we
 // are curious about
 float calculateAngleBetweenPlanes( Coordinates& planeP,
-                                   AminoAcid& aa2,
+                                   Residue& aa2,
                                    int index2 )
 {
   Coordinates planeQ;

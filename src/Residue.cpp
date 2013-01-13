@@ -1,11 +1,11 @@
 /****************************************************************************************************/
 //  COPYRIGHT 2011, University of Tennessee
 //  Author: David Jenkins (david.d.jenkins@gmail.com)
-//  File: AminoAcid.cpp
+//  File: Residue.cpp
 //  Date: 16 Jan 2011
 //  Date Modified: 7 Feb 2011
 //  Version: 1.0
-//  Description: Class implementations for AminoAcid
+//  Description: Class implementations for Residue
 //
 //  Updates: Fixed the non-center of charge calculations for ASP and GLU (7 Feb 2011)
 //
@@ -36,11 +36,11 @@
 //  ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*************************************************************************************************/
 
-#include "AminoAcid.hpp"
+#include "Residue.hpp"
 #include "Geometry.hpp"
 #include "CoutColors.hpp"
 
-AminoAcid::AminoAcid()
+Residue::Residue()
 {
   atom.clear();
   center.clear();
@@ -49,7 +49,7 @@ AminoAcid::AminoAcid()
   corrected = false;
 }
 
-AminoAcid::~AminoAcid()
+Residue::~Residue()
 {
   atom.clear();
   center.clear();
@@ -92,7 +92,7 @@ AminoAcid::~AminoAcid()
 // all of the other ones don't affect the center
 // This also sets the plane coordinates used to calculate 
 // the angle later in the program
-void AminoAcid::centerPHEorTYR()
+void Residue::centerPHEorTYR()
 {
   // This makes a vector of a vector of ATOM* 
   // since we are looking for 6 atoms, the size of the outer vector
@@ -210,7 +210,7 @@ void AminoAcid::centerPHEorTYR()
     }
 }
 
-void AminoAcid::centerPHEorTYR_altloc()
+void Residue::centerPHEorTYR_altloc()
 {
   int numaltlocs = altlocs.size();
   center.resize(numaltlocs);
@@ -288,7 +288,7 @@ void AminoAcid::centerPHEorTYR_altloc()
 // all of the other ones don't affect the center
 // This also sets the plane coordinates used to calculate 
 // the angle later in the program
-void AminoAcid::centerTRP()
+void Residue::centerTRP()
 {
   // This makes a vector of a vector of ATOM* 
   // since we are looking for 9 atoms, the size of the outer vector
@@ -443,7 +443,7 @@ void AminoAcid::centerTRP()
 // all of the other ones don't affect the center
 // This also sets the plane coordinates used to calculate 
 // the angle later in the program
-void AminoAcid::centerASP()
+void Residue::centerASP()
 {
   // This makes a vector of a vector of ATOM* 
   // since we are looking for 4 atoms, the size of the outer vector
@@ -547,7 +547,7 @@ void AminoAcid::centerASP()
 // all of the other ones don't affect the center
 // This also sets the plane coordinates used to calculate 
 // the angle later in the program
-void AminoAcid::centerGLU()
+void Residue::centerGLU()
 {
   // This makes a vector of a vector of ATOM* 
   // since we are looking for 4 atoms, the size of the outer vector
@@ -652,7 +652,7 @@ void AminoAcid::centerGLU()
 // OD1 and OD2 coords to the center vector.
 // This also sets the plane coordinates used to calculate 
 // the angle later in the program
-void AminoAcid::centerASP_oxygen()
+void Residue::centerASP_oxygen()
 {
   // This makes a vector of a vector of ATOM* 
   // since we are looking for 3 atoms, the size of the outer vector
@@ -742,7 +742,7 @@ void AminoAcid::centerASP_oxygen()
     }
 }
 
-void AminoAcid::centerASP_oxygen_altloc()
+void Residue::centerASP_oxygen_altloc()
 {
 
   int numaltlocs = altlocs.size();
@@ -809,7 +809,7 @@ void AminoAcid::centerASP_oxygen_altloc()
 // OE1 and OE2 coords to the center vector.
 // This also sets the plane coordinates used to calculate 
 // the angle later in the program
-void AminoAcid::centerGLU_oxygen()
+void Residue::centerGLU_oxygen()
 {
   // This makes a vector of a vector of ATOM* 
   // since we are looking for 3 atoms, the size of the outer vector
@@ -899,7 +899,7 @@ void AminoAcid::centerGLU_oxygen()
     }
 }
 
-void AminoAcid::centerGLU_oxygen_altloc()
+void Residue::centerGLU_oxygen_altloc()
 {
 
   int numaltlocs = altlocs.size();
@@ -958,7 +958,7 @@ void AminoAcid::centerGLU_oxygen_altloc()
     }
 }
 
-void AminoAcid::centerPHEorTYR_simplified()
+void Residue::centerPHEorTYR_simplified()
 {
   center.resize(1);
 
@@ -995,7 +995,7 @@ void AminoAcid::centerPHEorTYR_simplified()
   center[0] /= 2;
 }
 
-void AminoAcid::centerASP_charge()
+void Residue::centerASP_charge()
 {
   center.resize(1);
   Coordinates tempCenter(0.0, 0.0, 0.0);
@@ -1014,7 +1014,7 @@ void AminoAcid::centerASP_charge()
   center[0] += (tempCenter * HYDROGEN_BOND_DISTANCE) / tempCenter.norm();
 }
 
-void AminoAcid::centerGLU_charge()
+void Residue::centerGLU_charge()
 {
   center.resize(1);
   Coordinates tempCenter(0.0, 0.0, 0.0);
@@ -1037,7 +1037,7 @@ void AminoAcid::centerGLU_charge()
 // Calculate the centers for PO4, 2HP, PI
 // these AA need the following atoms:
 //   P, O1, O2, O3, and O4
-void AminoAcid::centerPO4or2HPorPI()
+void Residue::centerPO4or2HPorPI()
 {
   // This makes a vector of a vector of ATOM* 
   // since we are looking for 5 atoms, the size of the outer vector
@@ -1135,7 +1135,7 @@ void AminoAcid::centerPO4or2HPorPI()
     }
 }
 
-void AminoAcid::centerPO4or2HPorPI_charge()
+void Residue::centerPO4or2HPorPI_charge()
 {
   // This makes a vector of a vector of ATOM* 
   // since we are looking for 6 atoms, the size of the outer vector
@@ -1229,7 +1229,7 @@ void AminoAcid::centerPO4or2HPorPI_charge()
 // Calculate the centers for 2PO and PO3
 // these AA need the following atoms:
 //   P, O1(P), O2(P), O3(P)
-void AminoAcid::center2POorPO3()
+void Residue::center2POorPO3()
 {
   // This makes a vector of a vector of ATOM* 
   // since we are looking for 5 atoms, the size of the outer vector
@@ -1318,7 +1318,7 @@ void AminoAcid::center2POorPO3()
     }
 }
 
-void AminoAcid::center2POorPO3_charge()
+void Residue::center2POorPO3_charge()
 {
   // This makes a vector of a vector of ATOM* 
   // since we are looking for 6 atoms, the size of the outer vector
@@ -1408,7 +1408,7 @@ int find_index(vector<T>& vec, T to_find)
   return vec.size();
 }
 
-void AminoAcid::determineAltLoc(vector<char>&altloc_ids)
+void Residue::determineAltLoc(vector<char>&altloc_ids)
 {
   int count = altloc_ids.size();
   if(count == 0)
@@ -1453,7 +1453,7 @@ void AminoAcid::determineAltLoc(vector<char>&altloc_ids)
 }
 
 // Calculates the center of the amino acid
-void AminoAcid::calculateCenter(bool centerOfCharge)
+void Residue::calculateCenter(bool centerOfCharge)
 {
 //cout << "calculateCenter: residue=" << residue << ", centerOfCharge=" << centerOfCharge << ", altlocs.size()=" << altlocs.size() << endl;
 
@@ -1526,7 +1526,7 @@ void AminoAcid::calculateCenter(bool centerOfCharge)
     }
 }
 
-bool AminoAcid::findCarbonRings()
+bool Residue::findCarbonRings()
 {
   bool foundRings = false;
   const float TARGET_DIST = 2.8;
@@ -1651,14 +1651,14 @@ bool AminoAcid::findCarbonRings()
   return foundRings;
 }
 
-void AminoAcid::calculateAnglesPreHydrogens(AminoAcid aa2,
+void Residue::calculateAnglesPreHydrogens(Residue aa2,
                                             int index1,
                                             int index2,
                                             float* angle,
                                             float* angle1,
                                             float* angleP)
 {
-  AminoAcid aa1 = *this;
+  Residue aa1 = *this;
   Coordinates planeP;
   Coordinates planeProject;
 
@@ -1691,7 +1691,7 @@ void AminoAcid::calculateAnglesPreHydrogens(AminoAcid aa2,
 
 }
 
-bool AminoAcid::calculateDistancesAndAnglesPostHydrogens(AminoAcid aa2,
+bool Residue::calculateDistancesAndAnglesPostHydrogens(Residue aa2,
                                                          Coordinates closestOxygen,
                                                          float threshold,
                                                          float* dist,
@@ -1701,7 +1701,7 @@ bool AminoAcid::calculateDistancesAndAnglesPostHydrogens(AminoAcid aa2,
                                                          float* angleOxy,
                                                          float* angleOxy2)
 {
-  AminoAcid aa1 = *this;
+  Residue aa1 = *this;
 
 //cout << "calculateDistancesAndAnglesPostHydrogens for " << residue << " and " << aa2.residue << endl; 
 //cout << "length of aa1.center[0].plane_info: " << aa1.center[0].plane_info.size() << endl;
@@ -1814,7 +1814,7 @@ bool AminoAcid::calculateDistancesAndAnglesPostHydrogens(AminoAcid aa2,
   return true;
 }
 
-void AminoAcid::markAltLocAtomsPHEorTYR(int index)
+void Residue::markAltLocAtomsPHEorTYR(int index)
 {
   for(int i=0; i < this->atom.size(); i++)
     {
@@ -1851,7 +1851,7 @@ void AminoAcid::markAltLocAtomsPHEorTYR(int index)
     }  
 }
 
-void AminoAcid::markAltLocAtomsASP(int index)
+void Residue::markAltLocAtomsASP(int index)
 {
   for(int i=0; i < this->atom.size(); i++)
     {
@@ -1873,7 +1873,7 @@ void AminoAcid::markAltLocAtomsASP(int index)
     }  
 }
 
-void AminoAcid::markAltLocAtomsGLU(int index)
+void Residue::markAltLocAtomsGLU(int index)
 {
   for(int i=0; i < this->atom.size(); i++)
     {
@@ -1895,7 +1895,7 @@ void AminoAcid::markAltLocAtomsGLU(int index)
     }  
 }
 
-void AminoAcid::markAltLocAtomsPO4or2HPorPI(int index)
+void Residue::markAltLocAtomsPO4or2HPorPI(int index)
 {
   for(int i=0; i < this->atom.size(); i++)
     {
@@ -1927,7 +1927,7 @@ void AminoAcid::markAltLocAtomsPO4or2HPorPI(int index)
     }  
 }
 
-void AminoAcid::markAltLocAtoms2POorPO3(int index)
+void Residue::markAltLocAtoms2POorPO3(int index)
 {
   for(int i=0; i < this->atom.size(); i++)
     {
@@ -1954,7 +1954,7 @@ void AminoAcid::markAltLocAtoms2POorPO3(int index)
     }  
 }
 
-void AminoAcid::markAltLocAtoms(int index)
+void Residue::markAltLocAtoms(int index)
 {
   if(residue == "PHE" || residue == "TYR")
     {
@@ -1978,7 +1978,7 @@ void AminoAcid::markAltLocAtoms(int index)
     }
 }
 
-void AminoAcid::unmarkAltLocAtomsPHEorTYR()
+void Residue::unmarkAltLocAtomsPHEorTYR()
 {
   for(int i=0; i < this->atom.size(); i++)
     {
@@ -2009,7 +2009,7 @@ void AminoAcid::unmarkAltLocAtomsPHEorTYR()
     }  
 }
 
-void AminoAcid::unmarkAltLocAtomsASP()
+void Residue::unmarkAltLocAtomsASP()
 {
   for(int i=0; i < this->atom.size(); i++)
     {
@@ -2028,7 +2028,7 @@ void AminoAcid::unmarkAltLocAtomsASP()
     }  
 }
 
-void AminoAcid::unmarkAltLocAtomsGLU()
+void Residue::unmarkAltLocAtomsGLU()
 {
   for(int i=0; i < this->atom.size(); i++)
     {
@@ -2047,7 +2047,7 @@ void AminoAcid::unmarkAltLocAtomsGLU()
     }  
 }
 
-void AminoAcid::unmarkAltLocAtomsPO4or2HPorPI()
+void Residue::unmarkAltLocAtomsPO4or2HPorPI()
 {
   for(int i=0; i < this->atom.size(); i++)
     {
@@ -2074,7 +2074,7 @@ void AminoAcid::unmarkAltLocAtomsPO4or2HPorPI()
     }  
 }
 
-void AminoAcid::unmarkAltLocAtoms2POorPO3()
+void Residue::unmarkAltLocAtoms2POorPO3()
 {
   for(int i=0; i < this->atom.size(); i++)
     {
@@ -2097,7 +2097,7 @@ void AminoAcid::unmarkAltLocAtoms2POorPO3()
     }  
 }
 
-void AminoAcid::unmarkAltLocAtoms()
+void Residue::unmarkAltLocAtoms()
 {
   if(residue == "PHE" || residue == "TYR")
     {
@@ -2121,7 +2121,7 @@ void AminoAcid::unmarkAltLocAtoms()
     }
 }
 
-string AminoAcid::makeConectPHEorTYR()
+string Residue::makeConectPHEorTYR()
 {
   string serials[6];
   for(int i=0; i<this->atom.size(); i++)
@@ -2160,7 +2160,7 @@ string AminoAcid::makeConectPHEorTYR()
   return conect;
 }
 
-string AminoAcid::makeConectPHEorTYR_altloc(int c)
+string Residue::makeConectPHEorTYR_altloc(int c)
 {
   string serials[6];
   for(int i=0; i<this->altlocs[c].size(); i++)
@@ -2199,7 +2199,7 @@ string AminoAcid::makeConectPHEorTYR_altloc(int c)
   return conect;
 }
 
-string AminoAcid::makeConectGLU()
+string Residue::makeConectGLU()
 {
   string serials[3];
   for(int i=0; i<this->atom.size(); i++)
@@ -2223,7 +2223,7 @@ string AminoAcid::makeConectGLU()
   return conect;
 }
 
-string AminoAcid::makeConectGLU_altloc(int c)
+string Residue::makeConectGLU_altloc(int c)
 {
   string serials[3];
   for(int i=0; i<this->altlocs[c].size(); i++)
@@ -2248,7 +2248,7 @@ string AminoAcid::makeConectGLU_altloc(int c)
 }
 
 
-string AminoAcid::makeConectASP()
+string Residue::makeConectASP()
 {
   string serials[3];
   for(int i=0; i<this->atom.size(); i++)
@@ -2272,7 +2272,7 @@ string AminoAcid::makeConectASP()
   return conect;
 }
 
-string AminoAcid::makeConectASP_altloc(int c)
+string Residue::makeConectASP_altloc(int c)
 {
   string serials[3];
   for(int i=0; i<this->altlocs[c].size(); i++)
@@ -2297,7 +2297,7 @@ string AminoAcid::makeConectASP_altloc(int c)
 }
 
 
-string AminoAcid::makeConectPO4or2HPorPI()
+string Residue::makeConectPO4or2HPorPI()
 {
   string serials[5];
   for(int i=0; i<this->atom.size(); i++)
@@ -2331,7 +2331,7 @@ string AminoAcid::makeConectPO4or2HPorPI()
   return conect;
 }
 
-string AminoAcid::makeConect2POorPO3()
+string Residue::makeConect2POorPO3()
 {
   string serials[5];
   for(int i=0; i<this->atom.size(); i++)
@@ -2360,7 +2360,7 @@ string AminoAcid::makeConect2POorPO3()
   return conect;
 }
 
-string AminoAcid::makeConectCarbonRing(int c)
+string Residue::makeConectCarbonRing(int c)
 {
   string serials[6];
   string conect = "";
@@ -2395,7 +2395,7 @@ string AminoAcid::makeConectCarbonRing(int c)
   return conect;
 }
 
-string AminoAcid::makeConect(int c)
+string Residue::makeConect(int c)
 {
   if(residue == "PHE" || residue == "TYR")
     {
@@ -2430,7 +2430,7 @@ string AminoAcid::makeConect(int c)
 // to the carbon, average them, and use that as the coordinates 
 // for the hydrogen that we are looking for.  We then throw all
 // of the other hydrogens away.
-bool AminoAcid::removeExcessHydrogens(vector<string> conect)
+bool Residue::removeExcessHydrogens(vector<string> conect)
 {
   if( !(residue == "GLU" || residue == "ASP") )
     return false;
@@ -2501,7 +2501,7 @@ bool AminoAcid::removeExcessHydrogens(vector<string> conect)
   return corrected;
 }
 
-void AminoAcid::printPHEorTYR(FILE* output)
+void Residue::printPHEorTYR(FILE* output)
 {
   for(int i=0; i < this->atom.size(); i++)
     {
@@ -2517,7 +2517,7 @@ void AminoAcid::printPHEorTYR(FILE* output)
     }
 }
 
-void AminoAcid::printASP(FILE* output)
+void Residue::printASP(FILE* output)
 {
   for(int i=0; i < this->atom.size(); i++)
     {
@@ -2530,7 +2530,7 @@ void AminoAcid::printASP(FILE* output)
     }
 }
 
-void AminoAcid::printGLU(FILE* output)
+void Residue::printGLU(FILE* output)
 {
   for(int i=0; i < this->atom.size(); i++)
     {
@@ -2543,7 +2543,7 @@ void AminoAcid::printGLU(FILE* output)
     }
 }
 
-void AminoAcid::printNeededAtoms(FILE* output)
+void Residue::printNeededAtoms(FILE* output)
 {
 
   if(residue == "PHE" || residue == "TYR")
@@ -2564,7 +2564,7 @@ void AminoAcid::printNeededAtoms(FILE* output)
     }
 }
 
-ostream& operator<<(ostream& output, const AminoAcid& p) 
+ostream& operator<<(ostream& output, const Residue& p) 
 {
   for(int i=0; i < p.atom.size(); i++)
     {

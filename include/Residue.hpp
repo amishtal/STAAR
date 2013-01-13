@@ -1,10 +1,10 @@
 /****************************************************************************************************/
 //  COPYRIGHT 2011, University of Tennessee
 //  Author: David Jenkins (david.d.jenkins@gmail.com)
-//  File: AminoAcid.hpp
+//  File: Residue.hpp
 //  Date: 16 Jan 2011
 //  Version: 1.0
-//  Description: Holds the class declaration for AminoAcid
+//  Description: Holds the class declaration for Residue
 //
 /***************************************************************************************************/
 //
@@ -46,11 +46,11 @@
 #include "Atom.hpp"
 
 // This is just because I was dumb before and just called this library
-// AminoAcid, whereas it should have been Residue.  I just don't
+// Residue, whereas it should have been Residue.  I just don't
 // want to go through all the files and change it, even though 
 // it wouldn't be that difficult. Either way, with this, we can use
-// either AminoAcid or Residue interchangeably.
-#define Residue AminoAcid
+// either Residue or Residue interchangeably.
+#define Residue Residue
 
 // Defines to set indexes for the vector that holds plane information
 // This is only to make reading the code easier so that when you look
@@ -70,7 +70,7 @@
 
 #define HYDROGEN_BOND_DISTANCE 0.632469
 
-class AminoAcid{
+class Residue{
 private:
   // calculates the centers of the AA and sets the plane
   // information order to calculate the angle later
@@ -138,10 +138,10 @@ private:
 
 public:
   // constructor
-  AminoAcid();
+  Residue();
 
   // destructor
-  ~AminoAcid();
+  ~Residue();
 
   // Finds the alternate locations
   void determineAltLoc(vector<char>&altloc_ids);
@@ -152,13 +152,13 @@ public:
   // functions above depending on AA
   void calculateCenter(bool center);
 
-  void calculateAnglesPreHydrogens(AminoAcid aa2,
+  void calculateAnglesPreHydrogens(Residue aa2,
                                    int index1,
                                    int index2,
                                    float* angle,
                                    float* angle1,
                                    float* angleP);
-  bool calculateDistancesAndAnglesPostHydrogens(AminoAcid aa2,
+  bool calculateDistancesAndAnglesPostHydrogens(Residue aa2,
                                                 Coordinates closestOxygen,
                                                 float threshold,
                                                 float* dist,
@@ -213,7 +213,7 @@ public:
 
   string line;
 
-  friend ostream& operator<<(ostream& output, const AminoAcid& p);
+  friend ostream& operator<<(ostream& output, const Residue& p);
 
 };
 

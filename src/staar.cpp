@@ -49,7 +49,7 @@
 #include "PDB.hpp"
 #include "Seqres.hpp"
 #include "Geometry.hpp"
-#include "AminoAcid.hpp"
+#include "Residue.hpp"
 #include "Coordinates.hpp"
 #include "CoutColors.hpp"
 
@@ -96,16 +96,16 @@ void searchCarbonRingLigandsInformation(PDB & PDBfile,
 
 // Finds the closest distance among all of the centers
 // associated with each amino acid
-double findClosestDistance(AminoAcid& aa1,
-                           AminoAcid& aa2,
+double findClosestDistance(Residue& aa1,
+                           Residue& aa2,
                            float threshold,
                            unsigned int* closest_index1,
                            unsigned int* closest_index2);
 
 // Finds the closest interaction among all of the possible
 // amino acid centers
-void findBestInteraction( AminoAcid& aa1,
-                          AminoAcid& aa2,
+void findBestInteraction( Residue& aa1,
+                          Residue& aa2,
                           float threshold,
                           PDB& PDBfile,
                           char* gamessfolder,
@@ -115,8 +115,8 @@ void findBestInteraction( AminoAcid& aa1,
 // Writes the INP files
 void outputINPfile(string input_filename,
                    char* filename,
-                   AminoAcid& aa1h,
-                   AminoAcid& aa2h);
+                   Residue& aa1h,
+                   Residue& aa2h);
 
 void write_output_head(ofstream& out);
 
@@ -622,8 +622,8 @@ void searchCarbonRingLigandsInformation(PDB & PDBfile,
 
 // Finds the closest distance among all of the centers
 // associated with each amino acid
-double findClosestDistance(AminoAcid& aa1,
-                           AminoAcid& aa2,
+double findClosestDistance(Residue& aa1,
+                           Residue& aa2,
                            float threshold,
                            unsigned int* closest_index1,
                            unsigned int* closest_index2)
@@ -656,8 +656,8 @@ double findClosestDistance(AminoAcid& aa1,
   return closest;
 }
 
-void findBestInteraction( AminoAcid& aa1,
-                          AminoAcid& aa2,
+void findBestInteraction( Residue& aa1,
+                          Residue& aa2,
                           float threshold,
                           PDB & PDBfile,
                           char* gamessfolder,
@@ -674,8 +674,8 @@ void findBestInteraction( AminoAcid& aa1,
   float angleh;
   float angleOxy;
   float angleOxy2;
-  AminoAcid aa1h;
-  AminoAcid aa2h;
+  Residue aa1h;
+  Residue aa2h;
   char output_filename[1024] = "N/A";
   static int numOutputted = 0;
 
@@ -870,7 +870,7 @@ void findBestInteraction( AminoAcid& aa1,
     }
 }
 
-void outputINPfile(string input_filename, char* filename, AminoAcid& aa1h, AminoAcid& aa2h)
+void outputINPfile(string input_filename, char* filename, Residue& aa1h, Residue& aa2h)
 {
   ofstream inpout(filename);
 

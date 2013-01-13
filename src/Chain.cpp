@@ -65,7 +65,7 @@ Chain::~Chain()
 }
 
 // Adds reference to an ATOM to a vector of Atom*
-void Chain::addAminoAcid(AminoAcid a)
+void Chain::addResidue(Residue a)
 {
   aa.push_back(a);
 }

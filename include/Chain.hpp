@@ -37,7 +37,7 @@
 #ifndef __CHAIN_HPP__
 #define __CHAIN_HPP__
 
-#include "AminoAcid.hpp"
+#include "Residue.hpp"
 #include "Atom.hpp"
 #include "Seqres.hpp"
 
@@ -51,7 +51,7 @@ public:
   // Destructor to reset everything
   ~Chain();
   // Adds an AA to a vector
-  void addAminoAcid(AminoAcid a);
+  void addResidue(Residue a);
   // Adds reference to a HETATM to a vector of Atom*
   //void addHetatm(Atom* h);
   void addHetatm(Residue r);
@@ -59,7 +59,7 @@ public:
   void addSeqres(Seqres* s);
   
   char                  id;             // Chain id
-  vector<AminoAcid>     aa;             // Vector of atoms in this chain
+  vector<Residue>     aa;             // Vector of atoms in this chain
   vector<Residue>       hetatms;        // Vector of hetatms in this chain
   vector<Seqres*>       seqres;         // Vector of seqres in this chain
 

@@ -322,7 +322,7 @@ void PDB::parsePDBstream(istream& PDBfile, float resolution)
 #ifndef NO_BABEL
 // This function will call the Babel library to add 
 // hydrogens to the residues
-void PDB::addHydrogensToPair(AminoAcid& a, AminoAcid& b, int cd1, int cd2)
+void PDB::addHydrogensToPair(Residue& a, Residue& b, int cd1, int cd2)
 {
 //cout << "Adding hydrogens to pair: " << a.residue << ", " << b.residue << endl;
 //cout << "  cd1:" << cd1 << ", cd2:" << cd2 << endl;
@@ -497,7 +497,7 @@ void PDB::populateChains(bool center)
         }
 
       // Separate the atoms into amino acids
-      AminoAcid aa;
+      Residue aa;
       unsigned int residue_number = atoms[i].resSeq;
       char iCode = atoms[i].iCode;
       vector<char> altloc_ids;
@@ -544,7 +544,7 @@ void PDB::populateChains(bool center)
         }
 
       // Store the reference of the atom in the corresponding chain info
-      chains[chainIndex].addAminoAcid(aa);
+      chains[chainIndex].addResidue(aa);
     }
   
   //reset the flags

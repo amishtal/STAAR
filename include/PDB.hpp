@@ -44,7 +44,7 @@
 #include <openbabel/obconversion.h>
 #include <openbabel/mol.h>
 #endif
-#include "AminoAcid.hpp"
+#include "Residue.hpp"
 #include "Atom.hpp"
 #include "Seqres.hpp"
 #include "Utils.hpp"
@@ -119,7 +119,7 @@ public:
 
 #ifndef NO_BABEL
   // Calls Babel to add the hydrogens and inputs them into the PDB
-  void addHydrogensToPair(AminoAcid& a, AminoAcid& b, int cd1, int cd2);
+  void addHydrogensToPair(Residue& a, Residue& b, int cd1, int cd2);
 #endif
 
   // Organizes the data read from parsePDB into chains

@@ -44,7 +44,7 @@
 #include <cmath>
 
 #include "Coordinates.hpp"
-#include "AminoAcid.hpp"
+#include "Residue.hpp"
 
 // Find the dot product between 2 points
 float dotProduct(Coordinates& point1,
@@ -95,7 +95,7 @@ float findAngle(Coordinates& point1,
 // residue in question, and the index for the center that we
 // are curious about
 float calculateAngleBetweenPlanes( Coordinates& planeP,
-				   AminoAcid& aa2,
+				   Residue& aa2,
 				   int index2 );
 
 
