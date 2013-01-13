@@ -515,8 +515,57 @@ void searchCarbonRingLigandsInformation(PDB & PDBfile,
                                         Options & opts,
                                         ofstream& output_file)
 {
-  //cout << "Hey!!!" << endl;
+  // Due to the way centers are handled, I have to save the
+  // original centers and replace them with the center of
+  // carbon rings one at a time.
 
+///*
+  vector<Coordinates> original_center = ligand.center;
+  vector< vector<Atom*> > original_altlocs = ligand.altlocs;
+
+  ligand.center.clear();
+  ligand.altlocs.clear();
+
+  Chain* c1 = &(PDBfile.chains[chain1]);
+
+//cout << "Carbon ring ligand altlocs size: " << ligand.altlocs.size() << endl;
+
+  for(int i=0; i<c1->aa.size(); i++)
+    {
+      if(c1->aa[i].residue == residue2 && !(c1->aa[i].skip))
+        {
+          for (int j=0; j<ligand.carbonRingCenters.size(); j++)
+            {
+              // Ignore all the other carbon ring centers except for the jth.
+
+//              cout << "Looking for interaction between carbon ring " << j << " of " << ligand.residue << " and " << residue2 << endl;
+
+              ligand.center.push_back(ligand.carbonRingCenters[j]);
+              ligand.center[0].skip = false;
+
+              ligand.altlocs.push_back(ligand.carbonRings[j]);
+
+              findBestInteraction(ligand,
+                                  c1->aa[i],
+                                  opts.threshold,
+                                  PDBfile,
+                                  opts.gamessfolder,
+                                  false,
+                                  output_file);
+              ligand.center.clear();
+              ligand.altlocs.clear();
+
+//              cout << "Done" << endl;
+            }
+        }
+    }
+
+  ligand.center = original_center;
+  ligand.altlocs = original_altlocs;
+
+  return;
+//*/
+/*
   vector<Coordinates> original_center = ligand.center;
   vector< vector<Atom*> > original_altlocs = ligand.altlocs;
 
@@ -556,17 +605,6 @@ void searchCarbonRingLigandsInformation(PDB & PDBfile,
               //ligand.altlocs.clear();
               cout << "Done" << endl;
             }
-/*
-          for (int j=0; j<ligand.carbonRingCenters.size(); j++)
-            {
-              for (int k=0; k<c1->aa[i].center.size(); k++)
-                {
-                  float dist = ligand.carbonRingCenters[j].distance(c1->aa[i].center[j]);
-          
-                  cout << "Carbon ring distance to residue " << residue2 << " is " << dist << endl;
-                }
-            }
-*/
         }
     }
 
@@ -579,6 +617,7 @@ void searchCarbonRingLigandsInformation(PDB & PDBfile,
   ligand.altlocs = original_altlocs;
 
   return;
+*/
 }
 
 // Finds the closest distance among all of the centers
@@ -653,7 +692,7 @@ void findBestInteraction( AminoAcid& aa1,
   // add hydrogens, and try the process again
   if( closestDist != FLT_MAX )
     {
-      cout << " Closest distance is " << closestDist << endl;
+//cout << " Closest distance is " << closestDist << endl;
       // Just some codes that were in the original STAAR
       char code1 = 'I';
       if( aa1.atom[0]->chainID != aa2.atom[0]->chainID )
@@ -673,9 +712,9 @@ void findBestInteraction( AminoAcid& aa1,
       
 
       // Add the hydrogens
-      cout << "About to call \'addHydrogensToPair\'" << endl;
+//cout << "About to call \'addHydrogensToPair\'" << endl;
       pairWithHydrogen.addHydrogensToPair(aa1,aa2,closestDist_index1,closestDist_index2);
-      cout << "Made it past \'addHydrogensToPair\'" << endl;
+//cout << "Made it past \'addHydrogensToPair\'" << endl;
 
       // Set the filename
       pairWithHydrogen.filename = PDBfile.filename;
@@ -696,12 +735,12 @@ void findBestInteraction( AminoAcid& aa1,
           return;
         }
 
-for(int i=0; i<aa1h.center.size();i++) {
-  cout << aa1h.center[i].plane_info.size() << endl;
-  for (int j=0; j < aa1h.center[i].plane_info.size(); j++)
-    cout << aa1h.center[i].plane_info[j] << " ";
-  cout << endl;
-}
+//for(int i=0; i<aa1h.center.size();i++) {
+//  cout << aa1h.center[i].plane_info.size() << endl;
+//  for (int j=0; j < aa1h.center[i].plane_info.size(); j++)
+//    cout << aa1h.center[i].plane_info[j] << " ";
+//  cout << endl;
+//}
 
 
       float dist;

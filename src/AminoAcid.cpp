@@ -1550,15 +1550,22 @@ bool AminoAcid::findCarbonRings()
       for(int j=i+1; j<atom.size(); j++)
         {
           Atom * secondCarbon = atom[j];
-          if (firstCarbon->element != " C")
+          if (secondCarbon->element != " C")
             {
               continue;
             }
           float dist = firstCarbon->coord.distance(secondCarbon->coord);
           //cout << "Distance: " << dist << endl;
 
+          
           if (dist >= TARGET_DIST - 0.1 && dist <= TARGET_DIST + 0.1)
             {
+              // Make sure these carbons are part of the same location for
+              // this ligand.
+              if (firstCarbon->altLoc != secondCarbon->altLoc)
+                {
+                  continue;
+                }
               vector<Atom*> pair;
               pair.push_back(firstCarbon);
               pair.push_back(secondCarbon);
@@ -1569,7 +1576,8 @@ bool AminoAcid::findCarbonRings()
         }
     }
 
-  // Collect pairs whose midpoints are approximately equal.
+  // Collect pairs whose midpoints are approximately equal
+  // and that are part of the same location of the ligand.
   vector< vector<int> > potential_rings;
   for(int i=0; i<midpoints.size(); i++)
     {
@@ -1578,7 +1586,7 @@ bool AminoAcid::findCarbonRings()
       for(int j=i+1; j<midpoints.size(); j++)
         {
           float dist = midpoints[i].distance(midpoints[j]);
-          if (dist <= 0.3)
+          if (dist <= 0.3 && pairs[i][0]->altLoc == pairs[j][0]->altLoc)
             {
               index_set.push_back(j);
             }
@@ -1624,6 +1632,9 @@ bool AminoAcid::findCarbonRings()
             {
               ringCenter.plane_info[CG_PLANE_COORD_PTT] = coord2;
             }
+//cout << "RING:" << endl;
+//for (int I=0; I<6; I++)
+//  cout << newRing[I]->line << endl;
           carbonRings.push_back(newRing);
           carbonRingCenters.push_back(ringCenter);
           center.push_back(ringCenter);
@@ -1692,9 +1703,9 @@ bool AminoAcid::calculateDistancesAndAnglesPostHydrogens(AminoAcid aa2,
 {
   AminoAcid aa1 = *this;
 
-cout << "calculateDistancesAndAnglesPostHydrogens for " << residue << " and " << aa2.residue << endl; 
-cout << "length of aa1.center[0].plane_info: " << aa1.center[0].plane_info.size() << endl;
-cout << aa1.center[0].plane_info[0] << " " << endl;
+//cout << "calculateDistancesAndAnglesPostHydrogens for " << residue << " and " << aa2.residue << endl; 
+//cout << "length of aa1.center[0].plane_info: " << aa1.center[0].plane_info.size() << endl;
+//cout << aa1.center[0].plane_info[0] << " " << endl;
 
 
   // These are the 3 points in the benzene ring determined in centerPHEorTYR_simplified()
@@ -2362,12 +2373,14 @@ string AminoAcid::makeConectCarbonRing(int c)
       for(int j=0; j<this->carbonRings[c].size(); j++)
         {
           float dist = carbonRings[c][i]->coord.distance(carbonRings[c][j]->coord);
-          if (dist >= 1.3 && dist <= 1.5)
+//cout << dist << " ";
+          if (dist >= 1.2 && dist <= 1.6)
             {
               nConnected++;
               conect += carbonRings[c][j]->line.substr(6,5);
             }
         }
+//cout << endl;
 
       if (nConnected != 2)
         {

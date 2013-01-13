@@ -324,8 +324,8 @@ void PDB::parsePDBstream(istream& PDBfile, float resolution)
 // hydrogens to the residues
 void PDB::addHydrogensToPair(AminoAcid& a, AminoAcid& b, int cd1, int cd2)
 {
-cout << "Adding hydrogens to pair: " << a.residue << ", " << b.residue << endl;
-cout << "  cd1:" << cd1 << ", cd2:" << cd2 << endl;
+//cout << "Adding hydrogens to pair: " << a.residue << ", " << b.residue << endl;
+//cout << "  cd1:" << cd1 << ", cd2:" << cd2 << endl;
   OBMol mol;
   string addedH;
   istringstream tempss;
@@ -361,12 +361,12 @@ cout << "  cd1:" << cd1 << ", cd2:" << cd2 << endl;
       cd1_al = cd1%(a.altlocs.size());
     }
 
-cout << " Packed string for " << a.residue << ":" << endl;
+//cout << " Packed string for " << a.residue << ":" << endl;
   for(unsigned int i=0; i < a.altlocs[cd1_al].size(); i++)
     {
       if( !a.altlocs[cd1_al][i]->skip )
         {
-cout << "  " << a.altlocs[cd1_al][i]->line << endl;
+//cout << "  " << a.altlocs[cd1_al][i]->line << endl;
           packedFile += a.altlocs[cd1_al][i]->line + "\n";
         }
     }
@@ -386,7 +386,7 @@ cout << "  " << a.altlocs[cd1_al][i]->line << endl;
     {
       if( !b.altlocs[cd2_al][i]->skip )
         {
-cout << "  " << b.altlocs[cd2_al][i]->line << endl;
+//cout << "  " << b.altlocs[cd2_al][i]->line << endl;
             packedFile += b.altlocs[cd2_al][i]->line + "\n";
         }
     }
@@ -698,7 +698,7 @@ void PDB::findCarbonRingsInLigands()
           // Check if the current residue contains a carbon ring.
           // If it does, store the whole ligand.
           if(this->chains[i].hetatms[j].findCarbonRings()) {
-            cout << "Found a ring!" << endl;
+//cout << "Found a ring!" << endl;
             carbonRingLigands.push_back(&this->chains[i].hetatms[j]);
           }
         }
