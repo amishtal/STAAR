@@ -34,8 +34,8 @@
 /*************************************************************************************************/
 
 
-#ifndef __AMINOACID_HPP__
-#define __AMINOACID_HPP__
+#ifndef __RESIDUE_HPP__
+#define __RESIDUE_HPP__
 
 #include <cstdio>
 #include <cstdlib>
@@ -45,12 +45,6 @@
 #include <vector>
 #include "Atom.hpp"
 
-// This is just because I was dumb before and just called this library
-// Residue, whereas it should have been Residue.  I just don't
-// want to go through all the files and change it, even though 
-// it wouldn't be that difficult. Either way, with this, we can use
-// either Residue or Residue interchangeably.
-#define Residue Residue
 
 // Defines to set indexes for the vector that holds plane information
 // This is only to make reading the code easier so that when you look

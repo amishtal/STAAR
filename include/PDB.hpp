@@ -50,7 +50,6 @@
 #include "Utils.hpp"
 #include "Chain.hpp"
 
-
 static char INPheader[] = \
   " $CONTRL SCFTYP=RHF RUNTYP=EDA ICHARG=-1 MULT=1 COORD=CART MAXIT=200 $END\n" \
   " $SYSTEM TIMLIM=1000 $END\n"                                         \

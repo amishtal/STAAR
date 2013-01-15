@@ -1558,7 +1558,7 @@ bool Residue::findCarbonRings()
           //cout << "Distance: " << dist << endl;
 
           
-          if (dist >= TARGET_DIST - 0.1 && dist <= TARGET_DIST + 0.1)
+          if (dist >= TARGET_DIST - 0.09 && dist <= TARGET_DIST + 0.09)
             {
               // Make sure these carbons are part of the same location for
               // this ligand.

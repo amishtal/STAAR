@@ -50,8 +50,12 @@
 #include "CoutColors.hpp"
 
 #ifndef NO_BABEL
-using namespace OpenBabel;
+//using namespace OpenBabel;
+using OpenBabel::OBMol;
+using OpenBabel::OBConversion;
+using OpenBabel::OBFormat;
 #endif
+
 
 // Constructor to initialize the PDB class object by 
 // ensuring all the vectors are empty
