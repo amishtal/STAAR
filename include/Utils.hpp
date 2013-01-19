@@ -66,6 +66,8 @@ double getTime();
 // residue command line option
 vector<string> split(const string &s, char delim);
 
+string strip(string &s);
+
 // Just prints the logo and header information at start of prog
 void printHeader(ostream & os = cout);
 

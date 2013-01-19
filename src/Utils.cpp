@@ -118,6 +118,28 @@ vector<string> split(const string &s, char delim)
   return elems;
 }
 
+string strip(string &s)
+{
+  string str;
+  str = s;
+
+  // Tring leading whitespace
+  size_t startpos = str.find_first_not_of(" \t\n\r");
+  if (string::npos != startpos)
+    {
+      str = str.substr( startpos );
+    }
+
+  // Trim trailing whitespace
+  size_t endpos = str.find_first_not_of(" \t\n\r");
+  if (string::npos != endpos)
+    {
+      str = str.substr(0, endpos+1);
+    }
+
+  return str;
+}
+
 void printHeader(ostream & os)
 {
   // This is just the STAAR logo
