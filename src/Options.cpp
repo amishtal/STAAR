@@ -92,8 +92,12 @@ void printHelp()
   cerr << "                      " << " must have beginning dot"                                       << endl;
   cerr << "-r or --residues      " << "Set the residues that we are going to analyze"                  << endl;
   cerr << "                      " << " residues are set as follows (include quotations):"             << endl;
-  cerr << "                      " << " \"PHE;GLU,ASP\""                                               << endl;
-  cerr << "                      " << " at least 1, but as many as you want"                           << endl;
+  cerr << "                      " << "              \"PHE;GLU,ASP\""                                  << endl;
+  cerr << "                      " << " Commas separate residue names and a single semicolon"          << endl;
+  cerr << "                      " << " separate quadrapoles residues from anion residues."            << endl;
+  cerr << "                      " << " To only consider one type of residue, use only a"              << endl;
+  cerr << "                      " << " single space in place of the other types, as in"               << endl;
+  cerr << "                      " << "     \" ;GLU,ASP\"    or    \"PHE; \"               "           << endl;
   cerr << "-g or --gamess        " << "Output folder of the GAMESS files"                              << endl;
   cerr << "-t or --threshold     " << "Set the distance threshold between amino acids (default 7 A)"   << endl;
   cerr << "-s or --samechain     " << "Look for interactions in same chain only"                       << endl;
@@ -207,8 +211,29 @@ void Options::parseCmdline( int argc, char **argv )
             }
           // Get the first list of residues
           this->residue1 = split( temp[0], ',' );
+          if (residue1.size() == 0)
+            {
+              cerr << red << "Error" << reset << ": Must specify at least one residue to serve as the quadrapole." << endl;
+              printHelp();
+              exit(1);
+            }
+          if (residue1[0] == " ")
+            {
+              residue1.resize(0);
+            }
+
           // Get the second list of residues
           this->residue2 = split( temp[1], ',' );
+          if (residue2.size() == 0)
+            {
+              cerr << red << "Error" << reset << ": Must specify at least one residue to serve as the anion." << endl;
+              printHelp();
+              exit(1);
+            }
+          if (residue2[0] == " ")
+            {
+              residue2.resize(0);
+            }
         }
         break;
 
@@ -315,7 +340,7 @@ void Options::parseCmdline( int argc, char **argv )
       outputGamessINP = false;
     }
   
-  if (residue1.size() == 0 || residue2.size() == 0)
+  if ((residue1.size() + residue2.size()) == 0)
     {
       cerr << red << "Error" << reset << ": -r or --residues must be used to set the residues to search for!!!" << endl;
       failure = true;
