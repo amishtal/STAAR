@@ -189,10 +189,18 @@ public:
   vector<Coordinates> center;
 
   // Holds the carbon atoms involved in carbon rings.
-  vector< vector<Atom*> > carbonRings;
+  //vector< vector<Atom*> > carbonRings;
   // Holds the centers (and plane info) of the carbon rings
   // stored in the above vector.
-  vector<Coordinates> carbonRingCenters;
+  //vector<Coordinates> carbonRingCenters;
+
+  // Holds information for carbon rings, grouping alternate
+  // locations in a nested vector.
+  // So carbonRingCenters[0] is a set of alternate locations
+  // for a single carbon ring and may contain only a single
+  // element.
+  vector< vector< vector<Atom*> > > carbonRings;
+  vector< vector<Coordinates> > carbonRingCenters;
 
   // holds the residue name
   string residue;

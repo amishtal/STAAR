@@ -1552,20 +1552,27 @@ bool Residue::findCarbonRings()
           Atom * secondCarbon = atom[j];
           if (secondCarbon->element != " C")
             {
+              // We're only looking for carbon-only rings.
+              continue;
+            }
+          if (firstCarbon->altLoc != secondCarbon->altLoc)
+            {
+              // Don't compare atoms that aren't part of the same
+              // alternate location set.
               continue;
             }
           float dist = firstCarbon->coord.distance(secondCarbon->coord);
+/*
+cout << "Checking distance between" << endl;
+cout << "  " << firstCarbon->line << endl;
+cout << "  " << secondCarbon->line << endl;
+cout << "-- " << dist << endl << endl;
+*/
           //cout << "Distance: " << dist << endl;
 
           
-          if (dist >= TARGET_DIST - 0.09 && dist <= TARGET_DIST + 0.09)
+          if (dist >= TARGET_DIST - 0.11 && dist <= TARGET_DIST + 0.11)
             {
-              // Make sure these carbons are part of the same location for
-              // this ligand.
-              if (firstCarbon->altLoc != secondCarbon->altLoc)
-                {
-                  continue;
-                }
               vector<Atom*> pair;
               pair.push_back(firstCarbon);
               pair.push_back(secondCarbon);
@@ -1574,6 +1581,15 @@ bool Residue::findCarbonRings()
               midpoints.push_back(firstCarbon->coord.midpoint(secondCarbon->coord));
             }
         }
+/*
+cout << endl << "Found the following pairs for " << residue << ":" << endl;
+for (int I=0; I < pairs.size(); I++) {
+  cout << "  " << pairs[I][0]->line << endl;
+  cout << "  " << pairs[I][1]->line << endl;
+  cout << "--" << endl;
+}
+*/
+
     }
 
   // Collect pairs whose midpoints are approximately equal
@@ -1618,13 +1634,20 @@ bool Residue::findCarbonRings()
 
           // Get the plane info for this ring. (Not quite sure if
           // this is correct...)
+          // In the following structure,
+          //                C1 -- C2
+          //               /        \
+          //              C6        C3
+          //               \        /
+          //                C5 -- C4
+          // we want either (C1, C3, C5) or (C2, C5, C6), I think.
           ringCenter.plane_info.resize(3);
           ringCenter.plane_info[CE2_PLANE_COORD_PTT] = &pairs[index_set[0]][0]->coord;
           ringCenter.plane_info[CD1_PLANE_COORD_PTT] = &pairs[index_set[0]][1]->coord;
           Coordinates* coord1 = &pairs[index_set[1]][0]->coord;
           Coordinates* coord2 = &pairs[index_set[1]][1]->coord;
           float dist1 = pairs[index_set[0]][1]->coord.distance(*coord1);
-          if (dist1 >= 1.35 || dist1 <= 1.45)
+          if (dist1 >= 1.35 && dist1 <= 1.45)
             {
               ringCenter.plane_info[CG_PLANE_COORD_PTT] = coord1;
             }
@@ -1635,9 +1658,91 @@ bool Residue::findCarbonRings()
 //cout << "RING:" << endl;
 //for (int I=0; I<6; I++)
 //  cout << newRing[I]->line << endl;
-          carbonRings.push_back(newRing);
-          carbonRingCenters.push_back(ringCenter);
-          center.push_back(ringCenter);
+
+          //carbonRings.push_back(newRing);
+          //carbonRingCenters.push_back(ringCenter);
+          //center.push_back(ringCenter);
+
+          // Handle alternate locations for carbon rings.
+          if (newRing[0]->altLoc == ' ')
+            {
+              // If the atoms of the ring don't have a specified location,
+              // then we can go ahead and put them in their own vectors.
+              vector< vector<Atom*> > newRingVector;
+              newRingVector.push_back(newRing);
+              carbonRings.push_back(newRingVector);
+
+              vector<Coordinates> ringCenterVector;
+              ringCenterVector.push_back(ringCenter);
+              carbonRingCenters.push_back(ringCenterVector);
+            }
+          else
+            {
+              // Otherwise, we need to look through all the other carbon
+              // rings to see if there is a matching alternate.
+              bool foundAltLoc = false;
+              for (int j=0; j<carbonRings.size(); j++)
+                {
+                  vector< vector<Atom*> > potential_alt_set = carbonRings[j];
+
+                  if (newRing[0]->altLoc == potential_alt_set[0][0]->altLoc)
+                    {
+                      // If the atoms have the same alternate location
+                      // then they must be part of completely separate
+                      // rings.
+                      continue;
+                    }
+
+                  for (int k=0; k<6; k++)
+                    {
+                      string carbonName = newRing[k]->name;
+                      bool foundCarbon = false;
+                      for (int ii=0; ii<6; ii++)
+                        {
+                          if (carbonName == potential_alt_set[0][ii]->name)
+                            {
+                              foundCarbon = true;	
+                              break;
+                            }
+                        }
+
+                      if (!foundCarbon)
+                        {
+                          // Abort searching this current ring if we don't find one
+                          // of the needed carbons.
+                          break;
+                        }
+                      if (foundCarbon && k == 5)
+                        {
+                          // We've found all 6 carbons, so this is an alternate!
+                          foundAltLoc = true;
+                          break;
+                        }
+                    }
+
+                  if (foundAltLoc)
+                   {
+                     // We've found a matching set of alternates for this carbon ring,
+                     // so store it and move on.
+                     carbonRings[j].push_back(newRing);
+                     carbonRingCenters[j].push_back(ringCenter);
+                     break;
+                   }
+                }
+              if (!foundAltLoc)
+                {
+                  // We haven't found an alternate location for this ring, so make
+                  // a new alternate set for it and store it.
+                  vector< vector<Atom*> > newRingVector;
+                  newRingVector.push_back(newRing);
+                  carbonRings.push_back(newRingVector);
+
+                  vector<Coordinates> ringCenterVector;
+                  ringCenterVector.push_back(ringCenter);
+                  carbonRingCenters.push_back(ringCenterVector);
+                }
+           }
+
         }
     }
   //cout << "Found " << pairs.size() << " pairs" << endl;
@@ -2365,6 +2470,34 @@ string Residue::makeConectCarbonRing(int c)
   string serials[6];
   string conect = "";
 
+  for(int i=0; i<this->altlocs[c].size(); i++)
+    {
+      conect += "CONECT" + altlocs[c][i]->line.substr(6,5);
+
+      int nConnected = 0;
+      for(int j=0; j<this->altlocs[c].size(); j++)
+        {
+          float dist = altlocs[c][i]->coord.distance(altlocs[c][j]->coord);
+//cout << dist << " ";
+          if (dist >= 1.2 && dist <= 1.6)
+            {
+              nConnected++;
+              conect += altlocs[c][j]->line.substr(6,5);
+            }
+        }
+//cout << endl;
+
+      if (nConnected != 2)
+        {
+          cout << "Problem with carbon ring: One carbon is connected to " << nConnected;
+          cout << " others. " << endl;
+        }
+
+      conect += "      \n";
+      
+    }
+
+/*
   for(int i=0; i<this->carbonRings[c].size(); i++)
     {
       conect += "CONECT" + carbonRings[c][i]->line.substr(6,5);
@@ -2391,6 +2524,7 @@ string Residue::makeConectCarbonRing(int c)
       conect += "      \n";
       
     }
+*/
   
   return conect;
 }
