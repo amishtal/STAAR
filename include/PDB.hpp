@@ -149,6 +149,8 @@ public:
   vector<string>* residue1;
   vector<string>* residue2;
 
+  string                  idCode;         // Holds the described protein's unique ID code
+
   vector<Chain>           chains;         // Variable to hold the chain information
   vector<Atom>            atoms;          // Vector hold all the atom lines
   vector<Atom>            hetatms;        // Vector holding all the hetatm lines

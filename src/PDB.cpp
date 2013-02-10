@@ -243,6 +243,13 @@ void PDB::parsePDBstream(istream& PDBfile, float resolution)
             }
         }
 
+      // Get the protein idCode
+      found = line.find("HEADER");
+      if ( found == 0 )
+        {
+          idCode = line.substr(62, 65);
+        }
+
       // Check the resolution of the PDB
       found = line.find("REMARK   2 RESOLUTION.");
       if( found == 0 )
