@@ -247,7 +247,7 @@ void PDB::parsePDBstream(istream& PDBfile, float resolution)
       found = line.find("HEADER");
       if ( found == 0 )
         {
-          idCode = line.substr(62, 65);
+          idCode = line.substr(62, 4);
         }
 
       // Check the resolution of the PDB
