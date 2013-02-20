@@ -37,6 +37,7 @@
 #ifndef __RESIDUE_HPP__
 #define __RESIDUE_HPP__
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -130,6 +131,8 @@ private:
   string makeConect2POorPO3();
   string makeConectCarbonRing(int c);
 
+  vector<Atom*> findAdditionalAtoms(vector<Atom*> ring);
+
 public:
   // constructor
   Residue();
@@ -201,6 +204,12 @@ public:
   // element.
   vector< vector< vector<Atom*> > > carbonRings;
   vector< vector<Coordinates> > carbonRingCenters;
+
+  // Holds atoms that are up to two bonds away from a ring
+  // atom. 
+  // So additionalAtoms[0][0] is a vector of atoms two bonds
+  // away from the 0th alternate location of the 0th ring.
+  vector< vector< vector<Atom*> > > additionalAtoms;
 
   // holds the residue name
   string residue;

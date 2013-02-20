@@ -1526,6 +1526,64 @@ void Residue::calculateCenter(bool centerOfCharge)
     }
 }
 
+
+/*
+  Given a vector containing a carbon ring (6 carbon atoms in a hexagon
+  configuration), find all atoms that are at most 2 bonds away from
+  a ring atom. Return these atoms as a vector.
+*/
+vector<Atom*> Residue::findAdditionalAtoms(vector<Atom*> ring)
+{
+  vector<Atom*> temp;
+
+  char ring_alt_loc = ring[0]->altLoc;
+
+  for(int i=0; i<ring.size(); i++)
+    {
+      Atom *ring_carbon = ring[i];
+      for(int j=0; j<atom.size(); j++)
+        {
+          Atom *other_atom= atom[j];
+
+          if (find(ring.begin(), ring.end(), other_atom) != ring.end() ||
+              other_atom->altLoc != ring_alt_loc)
+            {
+              // This atom is part of the ring
+              continue;
+            }
+
+          if (ring_carbon->isBonded(*other_atom))
+            {
+              temp.push_back(other_atom);
+            }
+        }
+    }
+
+  int n_found_atoms = temp.size();
+  for(int i=0; i<n_found_atoms; i++)
+    {
+      Atom *one_bond_atom = temp[i];
+      for (int j=0; j<atom.size(); j++)
+        {
+          Atom *other_atom = atom[j];
+
+          if (find(ring.begin(), ring.end(), other_atom) != ring.end() ||
+              find(temp.begin(), temp.end(), other_atom) != temp.end() ||
+              other_atom->altLoc != ring_alt_loc)
+            {
+              // This atom is part of the ring or one bond away from the ring
+              continue;
+            }
+          if (one_bond_atom->isBonded(*other_atom))
+            {
+              temp.push_back(other_atom);
+            }
+        }
+    }
+
+  return temp;
+}
+
 bool Residue::findCarbonRings()
 {
   bool foundRings = false;
@@ -1675,6 +1733,23 @@ for (int I=0; I < pairs.size(); I++) {
               vector<Coordinates> ringCenterVector;
               ringCenterVector.push_back(ringCenter);
               carbonRingCenters.push_back(ringCenterVector);
+
+              vector<Atom*> newAdditionalAtoms = findAdditionalAtoms(newRing);
+              vector< vector<Atom*> > newAdditionalAtomsVector;
+              newAdditionalAtomsVector.push_back(newAdditionalAtoms);
+              additionalAtoms.push_back(newAdditionalAtomsVector);
+
+/*
+if (newRing.size() == 0)
+  cout << "What the fucking fuck?" << endl;
+cout << "Found a ring:" << endl;
+for (int I; I<newRing.size(); I++)
+  cout << "\t" << newRing[I]->line << endl;
+cout << "  with additional atoms:" << endl;
+for (int I; I<newAdditionalAtoms.size(); I++)
+  cout << "\t" << newAdditionalAtoms[I]->line << endl;
+cout << endl;
+*/
             }
           else
             {
@@ -1726,13 +1801,16 @@ for (int I=0; I < pairs.size(); I++) {
                      // so store it and move on.
                      carbonRings[j].push_back(newRing);
                      carbonRingCenters[j].push_back(ringCenter);
+                     additionalAtoms[j].push_back(findAdditionalAtoms(newRing));
                      break;
                    }
                 }
               if (!foundAltLoc)
                 {
                   // We haven't found an alternate location for this ring, so make
-                  // a new alternate set for it and store it.
+                  // a new alternate set for it and store it. This shouldn't happen,
+                  // but some authors have stored alternate locations as separate
+                  // ligands, and we have decided to ignore this.
                   vector< vector<Atom*> > newRingVector;
                   newRingVector.push_back(newRing);
                   carbonRings.push_back(newRingVector);
@@ -1740,6 +1818,21 @@ for (int I=0; I < pairs.size(); I++) {
                   vector<Coordinates> ringCenterVector;
                   ringCenterVector.push_back(ringCenter);
                   carbonRingCenters.push_back(ringCenterVector);
+
+                  vector<Atom*> newAdditionalAtoms = findAdditionalAtoms(newRing);
+                  vector< vector<Atom*> > newAdditionalAtomsVector;
+                  newAdditionalAtomsVector.push_back(newAdditionalAtoms);
+                  additionalAtoms.push_back(newAdditionalAtomsVector);
+
+/*
+cout << "Found a ring:" << endl;
+for (int I=0; I<newRing.size(); I++)
+  cout << "\t" << newRing[I]->line << endl;
+cout << "  with additional atoms:" << endl;
+for (int I=0; I<newAdditionalAtoms.size(); I++)
+  cout << "\t" << newAdditionalAtoms[I]->line << endl;
+cout << endl;
+*/
                 }
            }
 
