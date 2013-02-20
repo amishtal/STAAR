@@ -93,6 +93,8 @@ public:
   // Returns true if parsing failed, false otherwise
   bool fail();
 
+  bool isBonded(Atom &other);
+
   int           serialNumber;  //Atom serial number: 7-11
   string        name;          //Atom name:          13-16
   char          altLoc;        //Alt. location:      17

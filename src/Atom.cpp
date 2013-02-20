@@ -235,6 +235,23 @@ ostream& operator<<(ostream& output, const Atom& p)
   return output;  // for multiple << operators.
 }
 
+bool Atom::isBonded(Atom &other)
+{
+  float MIN_BOND_LENGTH = 1.3;
+  float MAX_BOND_LENGTH = 2.2;
+
+  float dist = coord.distance(other.coord);
+  if (dist > MIN_BOND_LENGTH &&
+      dist < MAX_BOND_LENGTH)
+    {
+      return true;
+    }
+  else
+    {
+      return false;
+    }
+}
+
 bool Atom::operator<(const Atom &rhs) const
 {
   if(this->resSeq == rhs.resSeq)
