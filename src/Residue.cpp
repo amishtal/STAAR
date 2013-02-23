@@ -1529,10 +1529,10 @@ void Residue::calculateCenter(bool centerOfCharge)
 
 /*
   Given a vector containing a carbon ring (6 carbon atoms in a hexagon
-  configuration), find all atoms that are at most 2 bonds away from
+  configuration), find all atoms that are at most n_bonds bonds away from
   a ring atom. Return these atoms as a vector.
 */
-vector<Atom*> Residue::findAdditionalAtoms(vector<Atom*> ring)
+vector<Atom*> Residue::findAdditionalAtoms(vector<Atom*> ring, int n_bonds)
 {
   vector<Atom*> temp;
 
@@ -1559,24 +1559,27 @@ vector<Atom*> Residue::findAdditionalAtoms(vector<Atom*> ring)
         }
     }
 
-  int n_found_atoms = temp.size();
-  for(int i=0; i<n_found_atoms; i++)
+  for (int i=1; i<n_bonds; i++)
     {
-      Atom *one_bond_atom = temp[i];
-      for (int j=0; j<atom.size(); j++)
+      int n_found_atoms = temp.size();
+      for(int j=0; j<n_found_atoms; j++)
         {
-          Atom *other_atom = atom[j];
-
-          if (find(ring.begin(), ring.end(), other_atom) != ring.end() ||
-              find(temp.begin(), temp.end(), other_atom) != temp.end() ||
-              other_atom->altLoc != ring_alt_loc)
+          Atom *one_bond_atom = temp[j];
+          for (int k=0; k<atom.size(); k++)
             {
-              // This atom is part of the ring or one bond away from the ring
-              continue;
-            }
-          if (one_bond_atom->isBonded(*other_atom))
-            {
-              temp.push_back(other_atom);
+              Atom *other_atom = atom[k];
+    
+              if (find(ring.begin(), ring.end(), other_atom) != ring.end() ||
+                  find(temp.begin(), temp.end(), other_atom) != temp.end() ||
+                  other_atom->altLoc != ring_alt_loc)
+                {
+                  // This atom is part of the ring or one bond away from the ring
+                  continue;
+                }
+              if (one_bond_atom->isBonded(*other_atom))
+                {
+                  temp.push_back(other_atom);
+                }
             }
         }
     }
@@ -1734,7 +1737,7 @@ for (int I=0; I < pairs.size(); I++) {
               ringCenterVector.push_back(ringCenter);
               carbonRingCenters.push_back(ringCenterVector);
 
-              vector<Atom*> newAdditionalAtoms = findAdditionalAtoms(newRing);
+              vector<Atom*> newAdditionalAtoms = findAdditionalAtoms(newRing, 2);
               vector< vector<Atom*> > newAdditionalAtomsVector;
               newAdditionalAtomsVector.push_back(newAdditionalAtoms);
               additionalAtoms.push_back(newAdditionalAtomsVector);
@@ -1801,7 +1804,7 @@ cout << endl;
                      // so store it and move on.
                      carbonRings[j].push_back(newRing);
                      carbonRingCenters[j].push_back(ringCenter);
-                     additionalAtoms[j].push_back(findAdditionalAtoms(newRing));
+                     additionalAtoms[j].push_back(findAdditionalAtoms(newRing, 2));
                      break;
                    }
                 }
@@ -1819,12 +1822,12 @@ cout << endl;
                   ringCenterVector.push_back(ringCenter);
                   carbonRingCenters.push_back(ringCenterVector);
 
-                  vector<Atom*> newAdditionalAtoms = findAdditionalAtoms(newRing);
+                  vector<Atom*> newAdditionalAtoms = findAdditionalAtoms(newRing, 2);
                   vector< vector<Atom*> > newAdditionalAtomsVector;
                   newAdditionalAtomsVector.push_back(newAdditionalAtoms);
                   additionalAtoms.push_back(newAdditionalAtomsVector);
 
-/*
+
 cout << "Found a ring:" << endl;
 for (int I=0; I<newRing.size(); I++)
   cout << "\t" << newRing[I]->line << endl;
@@ -1832,7 +1835,7 @@ cout << "  with additional atoms:" << endl;
 for (int I=0; I<newAdditionalAtoms.size(); I++)
   cout << "\t" << newAdditionalAtoms[I]->line << endl;
 cout << endl;
-*/
+
                 }
            }
 
@@ -2570,54 +2573,16 @@ string Residue::makeConectCarbonRing(int c)
       int nConnected = 0;
       for(int j=0; j<this->altlocs[c].size(); j++)
         {
-          float dist = altlocs[c][i]->coord.distance(altlocs[c][j]->coord);
-//cout << dist << " ";
-          if (dist >= 1.2 && dist <= 1.6)
+          if (i == j) continue;
+
+          if (altlocs[c][i]->isBonded(*(altlocs[c][j])))
             {
-              nConnected++;
               conect += altlocs[c][j]->line.substr(6,5);
             }
         }
-//cout << endl;
-
-      if (nConnected != 2)
-        {
-          cout << "Problem with carbon ring: One carbon is connected to " << nConnected;
-          cout << " others. " << endl;
-        }
 
       conect += "      \n";
-      
     }
-
-/*
-  for(int i=0; i<this->carbonRings[c].size(); i++)
-    {
-      conect += "CONECT" + carbonRings[c][i]->line.substr(6,5);
-
-      int nConnected = 0;
-      for(int j=0; j<this->carbonRings[c].size(); j++)
-        {
-          float dist = carbonRings[c][i]->coord.distance(carbonRings[c][j]->coord);
-//cout << dist << " ";
-          if (dist >= 1.2 && dist <= 1.6)
-            {
-              nConnected++;
-              conect += carbonRings[c][j]->line.substr(6,5);
-            }
-        }
-//cout << endl;
-
-      if (nConnected != 2)
-        {
-          cout << "Problem with carbon ring: One carbon is connected to " << nConnected;
-          cout << " others. " << endl;
-        }
-
-      conect += "      \n";
-      
-    }
-*/
   
   return conect;
 }

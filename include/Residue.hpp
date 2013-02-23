@@ -131,7 +131,7 @@ private:
   string makeConect2POorPO3();
   string makeConectCarbonRing(int c);
 
-  vector<Atom*> findAdditionalAtoms(vector<Atom*> ring);
+  vector<Atom*> findAdditionalAtoms(vector<Atom*> ring, int n_bonds);
 
 public:
   // constructor
