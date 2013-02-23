@@ -76,6 +76,7 @@ Atom::Atom(char* linecs, int num)
 {
   string line(linecs);
   parseAtom(line, num);
+
 }
 
 // Destructor setting everything to initial values
@@ -187,6 +188,48 @@ void Atom::parseAtom(string line, int num)
   element = this->line.substr(76,2);
   charge = this->line.substr(78,2);
 
+  // Set the atom number
+  if (element == " C")
+    {
+      element_num = C;
+    }
+  else if (element == " H")
+    {
+      element_num = H;
+    }
+  else if (element == " N")
+    {
+      element_num = N;
+    }
+  else if (element == " O")
+    {
+      element_num = O;
+    }
+  else if (element == " F")
+    {
+      element_num = F;
+    }
+  else if (element == " P")
+    {
+      element_num = P;
+    }
+  else if (element == " S")
+    {
+      element_num = S;
+    }
+  else if (element == "CL")
+    {
+      element_num = Cl;
+    }
+  else if (element == "BR")
+    {
+      element_num = Br;
+    }
+  else
+    {
+      cerr << "Warning: Element unaccounted for: " << element << endl;
+    }
+
 }
 // Outputs the ATOM line into a file
 void Atom::print(FILE* output)
@@ -237,12 +280,27 @@ ostream& operator<<(ostream& output, const Atom& p)
 
 bool Atom::isBonded(Atom &other)
 {
+/*
   float MIN_BOND_LENGTH = 1.3;
   float MAX_BOND_LENGTH = 2.2;
 
   float dist = coord.distance(other.coord);
   if (dist > MIN_BOND_LENGTH &&
       dist < MAX_BOND_LENGTH)
+    {
+      return true;
+    }
+  else
+    {
+      return false;
+    }
+*/
+  float dist = coord.distance(other.coord);
+  float upper_bound = COVALENT_RADIUS[element_num] +
+                      COVALENT_RADIUS[other.element_num] +
+                      BOND_TOLERANCE_FACTOR;
+
+  if (dist <= upper_bound)
     {
       return true;
     }

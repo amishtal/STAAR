@@ -71,6 +71,18 @@
 // #define CHARGE_H2_P4O CHARGE_H1_2PO
 // #define CHARGE_H3_P4O CHARGE_H1_2PO 
 
+//enum Element_t {HYDROGEN=1, CARBON=6, NITROGEN=7, OXYGEN=8, PHOSPHORUS=15, SULFUR=16, , };
+//enum Element_t {H=1, C=6, N=7, O=8, F=9, P=15, S=16, Cl=17, Br=35};
+typedef enum {H=0, C, N, O, F, P, S, Cl, Br} ElementID_t;
+const float COVALENT_RADIUS[] =
+  {/* H */ 0.35, /* C */ 0.77, /* N */ 0.72, /* O */ 0.68
+  ,/* F */ 0.60, /* P */ 1.10, /* S */ 1.08, /* Cl*/ 1.06
+  ,/* Br*/ 1.23
+  };
+
+const float BOND_TOLERANCE_FACTOR = 0.2;
+
+
 class Atom
 {
 private:
@@ -109,7 +121,12 @@ public:
   string        charge;        //Atom charge:        79-80
   bool failure;
 
+  // I think this determines if the atom is printed to the GAMESS
+  // input file...
   bool skip;
+
+  ElementID_t element_num;
+  
 
   string line;
 
