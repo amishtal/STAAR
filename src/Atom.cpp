@@ -217,11 +217,11 @@ void Atom::parseAtom(string line, int num)
     {
       element_num = S;
     }
-  else if (element == "CL")
+  else if (element == "CL" || element == "Cl")
     {
       element_num = Cl;
     }
-  else if (element == "BR")
+  else if (element == "BR" || element == "Br")
     {
       element_num = Br;
     }

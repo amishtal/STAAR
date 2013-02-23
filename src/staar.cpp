@@ -52,6 +52,7 @@
 #include "Residue.hpp"
 #include "Coordinates.hpp"
 #include "CoutColors.hpp"
+#include "StatisticsRecorder.hpp"
 
 #define MAX_STR_LENGTH 1024
 
@@ -59,17 +60,18 @@
 bool processSinglePDBFile(const char* filename,
                           Options& opts,
                           ofstream& output_file,
-                          const char* chains=NULL);
+                          const char* chains,
+                          StatisticsRecorder* stats);
 
 // Read PDB names from a list and parses them from the specified directory
-bool processPDBList(Options& opts);
+bool processPDBList(Options& opts, StatisticsRecorder* stats);
 
 // Reads the PDB names and chains from a list and parses them from the
 // specified directory
-bool processPDBChainList(Options& opts);
+bool processPDBChainList(Options& opts, StatisticsRecorder* stats);
 
 // Traverses through a directory of PDB files processing each one
-bool processPDBDirectory(Options& opts);
+bool processPDBDirectory(Options& opts, StatisticsRecorder* stats);
 
 // Searches through all of the chains looking for interactions
 void searchChainInformation(PDB & PDBfile,
@@ -92,7 +94,8 @@ void searchCarbonRingLigandsInformation(PDB & PDBfile,
                                         unsigned int chain1,
                                         string residue1,
                                         Options & opts,
-                                        ofstream& output_file);
+                                        ofstream& output_file,
+                                        StatisticsRecorder *stats);
 
 // Finds the closest distance among all of the centers
 // associated with each amino acid
@@ -125,6 +128,8 @@ int main(int argc, char* argv[]){
   int return_value;
   double start = getTime();
 
+  StatisticsRecorder* stats = new StatisticsRecorder();
+
   // Parse and error check the command line arguments
   Options opts(argc, argv);
 
@@ -142,16 +147,16 @@ int main(int argc, char* argv[]){
   // file
   if( opts.pdblist )
     {
-      return_value = processPDBList(opts);
+      return_value = processPDBList(opts, stats);
     }
   else if( opts.chain_list )
     {
-      return_value = processPDBChainList(opts);
+      return_value = processPDBChainList(opts, stats);
     }
   else if( isDirectory(opts.pdbfile) )
     {
       // go through each file in the directory
-      return_value = processPDBDirectory(opts);
+      return_value = processPDBDirectory(opts, stats);
     }
   else
     {
@@ -162,7 +167,7 @@ int main(int argc, char* argv[]){
           return 1;
         }
       write_output_head(output_file);
-      return_value = processSinglePDBFile(opts.pdbfile, opts, output_file);
+      return_value = processSinglePDBFile(opts.pdbfile, opts, output_file, NULL, stats);
       output_file.close();
     }
 
@@ -173,7 +178,8 @@ int main(int argc, char* argv[]){
 bool processSinglePDBFile(const char* filename,
                           Options& opts,
                           ofstream& output_file,
-                          const char* chains)
+                          const char* chains,
+                          StatisticsRecorder* stats)
 {
   int numRes1 = opts.residue1.size();
   int numRes2 = opts.residue2.size();
@@ -191,6 +197,10 @@ bool processSinglePDBFile(const char* filename,
       PDBfile_whole.printFailure();
       return false;
     }
+
+
+  stats->setActiveProtein(PDBfile_whole.idCode);
+  cout << stats->getActiveProteinName() << endl;
 
   for(unsigned int model=0; model < PDBfile_whole.models.size(); model++)
     {
@@ -290,7 +300,8 @@ bool processSinglePDBFile(const char* filename,
                                                      i,
                                                      opts.residue2[ii],
                                                      opts,
-                                                     output_file);
+                                                     output_file,
+                                                     stats);
                 }
             }
         }
@@ -298,7 +309,7 @@ bool processSinglePDBFile(const char* filename,
   return true;
 }
 
-bool processPDBList(Options& opts)
+bool processPDBList(Options& opts, StatisticsRecorder* stats)
 {
   // Open the list file
   ifstream listfp(opts.pdblist);
@@ -331,7 +342,7 @@ bool processPDBList(Options& opts)
       cout << purple << line << opts.extension << endl;
 
       // Process the PDB file
-      processSinglePDBFile(filename.c_str(), opts, output_file);
+      processSinglePDBFile(filename.c_str(), opts, output_file, NULL, stats);
     }
   cout << endl;
   output_file.close();
@@ -339,7 +350,7 @@ bool processPDBList(Options& opts)
   return true;
 }
 
-bool processPDBChainList(Options& opts)
+bool processPDBChainList(Options& opts, StatisticsRecorder* stats)
 {
   // Open up the chain list file
   ifstream listfp(opts.chain_list);
@@ -382,7 +393,7 @@ bool processPDBChainList(Options& opts)
       cout << purple << fields[0] << opts.extension << endl;
 
       // Process the file
-      processSinglePDBFile(filename.c_str(), opts, output_file, fields[1].c_str());
+      processSinglePDBFile(filename.c_str(), opts, output_file, fields[1].c_str(), stats);
     }
   cout << endl;
   output_file.close();
@@ -390,7 +401,7 @@ bool processPDBChainList(Options& opts)
   return true;
 }
 
-bool processPDBDirectory(Options& opts)
+bool processPDBDirectory(Options& opts, StatisticsRecorder* stats)
 {
   DIR* directory;
   struct dirent* filename;
@@ -421,7 +432,7 @@ bool processPDBDirectory(Options& opts)
               sprintf(fullFilePath, "%s/%s", opts.pdbfile, filename->d_name);
 
               // perform some work on the current file
-              processSinglePDBFile(fullFilePath, opts, output_file);
+              processSinglePDBFile(fullFilePath, opts, output_file, NULL, stats);
             }
         }
     }
@@ -513,7 +524,8 @@ void searchCarbonRingLigandsInformation(PDB & PDBfile,
                                         unsigned int chain1,
                                         string residue2,
                                         Options & opts,
-                                        ofstream& output_file)
+                                        ofstream& output_file,
+                                        StatisticsRecorder *stats)
 {
   // Due to the way centers are handled, I have to save the
   // original centers and replace them with the center of
@@ -532,10 +544,22 @@ void searchCarbonRingLigandsInformation(PDB & PDBfile,
 
 //cout << "Carbon ring ligand altlocs size: " << ligand.altlocs.size() << endl;
 
+
+  stats->setActiveLigand(ligand, QPOLE);
+
+
+  // Set skip flag on all ligand atoms
+  for(int i=0; i < ligand.atom.size(); i++)
+    {
+      ligand.atom[i]->skip = true;
+    }
+
   for(int i=0; i<c1->aa.size(); i++)
     {
       if(c1->aa[i].residue == residue2 && !(c1->aa[i].skip))
         {
+          stats->setActiveResidue(c1->aa[i], ANION);
+
           for (int j=0; j<ligand.carbonRingCenters.size(); j++)
             {
               // Ignore all the other carbon ring centers except for the jth.
@@ -548,6 +572,7 @@ void searchCarbonRingLigandsInformation(PDB & PDBfile,
                   ligand.center[k].skip = false;
 
                   ligand.altlocs.push_back(ligand.carbonRings[j][k]);
+                  ligand.altlocs.push_back(ligand.additionalAtoms[j][k]);
                 }
 
               // Append ring number to residue name 
@@ -777,6 +802,24 @@ bool findBestInteraction( Residue& aa1,
         }
       else 
         {
+          // Set skip flags appropriately
+          for (int i=0; i<aa1h.atom.size(); i++)
+            {
+              aa1h.atom[i]->skip = true;
+            }
+          for (int i=0; i<aa1h.altlocs[closestDist_index1].size(); i++)
+            {
+              aa1h.altlocs[closestDist_index1][i]->skip = false;
+            }
+          for (int i=0; i<aa2h.atom.size(); i++)
+            {
+              aa2h.atom[i]->skip = true;
+            }
+          for (int i=0; i<aa2h.altlocs[closestDist_index2].size(); i++)
+            {
+              aa2h.altlocs[closestDist_index2][i]->skip = false;
+            }
+
           // Here, we are outputting the
           if( gamessfolder )
             {
@@ -844,19 +887,22 @@ void outputINPfile(string input_filename, char* filename, Residue& aa1h, Residue
   inpout << "C1" << endl;
   for(int i=0; i<aa1h.atom.size(); i++)
     {
-      if( aa1h.atom[i]->element == " H" )
+      if ( !aa1h.atom[i]->skip ) 
         {
-          inpout << "H      1.0     ";
+          if( aa1h.atom[i]->element == " H" )
+            {
+              inpout << "H      1.0     ";
+            }
+          else if( aa1h.atom[i]->element == " C")
+            {
+              inpout << "C      6.0     ";
+            }
+          else if( aa1h.atom[i]->element == " O")
+            {
+              inpout << "O      8.0     ";
+            }
+          inpout << aa1h.atom[i]->coord << endl;
         }
-      else if( aa1h.atom[i]->element == " C")
-        {
-          inpout << "C      6.0     ";
-        }
-      else if( aa1h.atom[i]->element == " O")
-        {
-          inpout << "O      8.0     ";
-        }
-      inpout << aa1h.atom[i]->coord << endl;
     }
 
   for(int i=0; i<aa2h.atom.size(); i++)
