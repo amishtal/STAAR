@@ -571,8 +571,17 @@ void searchCarbonRingLigandsInformation(PDB & PDBfile,
                   ligand.center.push_back(ligand.carbonRingCenters[j][k]);
                   ligand.center[k].skip = false;
 
-                  ligand.altlocs.push_back(ligand.carbonRings[j][k]);
-                  ligand.altlocs.push_back(ligand.additionalAtoms[j][k]);
+                  vector<Atom*> temp;
+                  for (int i=0; i < ligand.carbonRings[j][k].size(); i++)
+                    {
+                      temp.push_back(ligand.carbonRings[j][k][i]);
+                    }
+                  for (int i=0; i < ligand.additionalAtoms[j][k].size(); i++)
+                    {
+                      temp.push_back(ligand.additionalAtoms[j][k][i]);
+                    }
+
+                  ligand.altlocs.push_back(temp);
                 }
 
               // Append ring number to residue name 
@@ -802,22 +811,17 @@ bool findBestInteraction( Residue& aa1,
         }
       else 
         {
-          // Set skip flags appropriately
-          for (int i=0; i<aa1h.atom.size(); i++)
+          // Set skip flags appropriately for carbon ring ligands
+          if (aa1h.residue != "PHE")
             {
-              aa1h.atom[i]->skip = true;
-            }
-          for (int i=0; i<aa1h.altlocs[closestDist_index1].size(); i++)
-            {
-              aa1h.altlocs[closestDist_index1][i]->skip = false;
-            }
-          for (int i=0; i<aa2h.atom.size(); i++)
-            {
-              aa2h.atom[i]->skip = true;
-            }
-          for (int i=0; i<aa2h.altlocs[closestDist_index2].size(); i++)
-            {
-              aa2h.altlocs[closestDist_index2][i]->skip = false;
+              for (int i=0; i<aa1h.atom.size(); i++)
+                {
+                  aa1h.atom[i]->skip = true;
+                }
+              for (int i=0; i<aa1h.altlocs[closestDist_index1].size(); i++)
+                {
+                  aa1h.altlocs[closestDist_index1][i]->skip = false;
+                }
             }
 
           // Here, we are outputting the
@@ -897,14 +901,37 @@ void outputINPfile(string input_filename, char* filename, Residue& aa1h, Residue
             {
               inpout << "C      6.0     ";
             }
+          else if( aa1h.atom[i]->element == " N")
+            {
+              inpout << "N      7.0     ";
+            }
           else if( aa1h.atom[i]->element == " O")
             {
               inpout << "O      8.0     ";
             }
+          else if( aa1h.atom[i]->element_num == F)
+            {
+              inpout << "F      9.0     ";
+            }
+          else if( aa1h.atom[i]->element_num == P)
+            {
+              inpout << "P     15.0     ";
+            }
+          else if( aa1h.atom[i]->element_num == S)
+            {
+              inpout << "S     16.0     ";
+            }
+          else if( aa1h.atom[i]->element_num == Cl)
+            {
+              inpout << "Cl    17.0     ";
+            }
+          else if( aa1h.atom[i]->element_num == Br)
+            {
+              inpout << "Br    35.0     ";
+            }
           inpout << aa1h.atom[i]->coord << endl;
         }
     }
-
   for(int i=0; i<aa2h.atom.size(); i++)
     {
       if( !aa2h.atom[i]->skip )
