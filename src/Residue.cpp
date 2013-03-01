@@ -1632,7 +1632,7 @@ cout << "-- " << dist << endl << endl;
           //cout << "Distance: " << dist << endl;
 
           
-          if (dist >= TARGET_DIST - 0.11 && dist <= TARGET_DIST + 0.11)
+          if (dist >= TARGET_DIST - 0.09 && dist <= TARGET_DIST + 0.09)
             {
               vector<Atom*> pair;
               pair.push_back(firstCarbon);
