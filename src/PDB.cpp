@@ -335,19 +335,29 @@ void PDB::parsePDBstream(istream& PDBfile, float resolution)
 // hydrogens to the residues
 void PDB::addHydrogensToPair(Residue& a, Residue& b, int cd1, int cd2)
 {
-//cout << "Adding hydrogens to pair: " << a.residue << ", " << b.residue << endl;
-//cout << "  cd1:" << cd1 << ", cd2:" << cd2 << endl;
   OBMol mol;
   string addedH;
   istringstream tempss;
-  bool ligand;
-  if(b.atom[0]->line.find("HETATM") != string::npos)
+
+
+  bool ligand_a;
+  if(a.atom[0]->line.find("HETATM") != string::npos)
     {
-      ligand = true;
+      ligand_a = true;
     }
   else
     {
-      ligand = false;
+      ligand_a = false;
+    }
+  
+  bool ligand_b;
+  if(b.atom[0]->line.find("HETATM") != string::npos)
+    {
+      ligand_b = true;
+    }
+  else
+    {
+      ligand_b = false;
     }
 
   // This section is just to suppress all of the 
@@ -372,12 +382,10 @@ void PDB::addHydrogensToPair(Residue& a, Residue& b, int cd1, int cd2)
       cd1_al = cd1%(a.altlocs.size());
     }
 
-//cout << " Packed string for " << a.residue << ":" << endl;
   for(unsigned int i=0; i < a.altlocs[cd1_al].size(); i++)
     {
       if( !a.altlocs[cd1_al][i]->skip )
         {
-//cout << "  " << a.altlocs[cd1_al][i]->line << endl;
           packedFile += a.altlocs[cd1_al][i]->line + "\n";
         }
     }
@@ -397,16 +405,12 @@ void PDB::addHydrogensToPair(Residue& a, Residue& b, int cd1, int cd2)
     {
       if( !b.altlocs[cd2_al][i]->skip )
         {
-//cout << "  " << b.altlocs[cd2_al][i]->line << endl;
             packedFile += b.altlocs[cd2_al][i]->line + "\n";
         }
     }
 
-//cout << "CONECT string for " << a.residue << ":" << endl;
-//cout << a.makeConect(cd1_al) << endl;
   packedFile += a.makeConect(cd1_al);
   packedFile += b.makeConect(cd2_al);
-
 
   // Now, let's set up some Babel information
   // First, we get the PDB format to tell
@@ -432,13 +436,29 @@ void PDB::addHydrogensToPair(Residue& a, Residue& b, int cd1, int cd2)
   // This may be wrong, but it should be fine since we are
   // stripping out that information later when we write 
   // the GAMESS inp files
-  if( ligand )
+  if( ligand_a )
     {
       string line;
       string f = "";
       while( getline(tempss,line) )
         {
-          if( line.find(b.residue) != string::npos )
+          if( line.find(a.residue.substr(0, 3)) != string::npos )
+            {
+              line.replace(0,6,"HETATM");
+            }
+          f += line + "\n";
+        }
+      tempss.seekg(ios_base::beg);
+      tempss.clear();
+      tempss.str(f);
+    }
+  if( ligand_b )
+    {
+      string line;
+      string f = "";
+      while( getline(tempss,line) )
+        {
+          if( line.find(b.residue.substr(0, 3)) != string::npos )
             {
               line.replace(0,6,"HETATM");
             }
@@ -455,11 +475,13 @@ void PDB::addHydrogensToPair(Residue& a, Residue& b, int cd1, int cd2)
   // This is just to ensure that all of the atoms
   // are grouped together because Babel just 
   // appends the H to the end of the file
-  if( !ligand )
+  if( !ligand_b && !ligand_a)
       this->sortAtoms();
 
   // Split the atoms up into amino acids and chains
+  this->keepLigands = true;
   this->populateChains(true);
+  this->findCarbonRingsInLigands();
 }
 #endif
 
@@ -595,7 +617,6 @@ void PDB::populateChains(bool center)
             }
           i--;
           r.residue = hetatms[i].residueName;
-//cout << "Residue: " << r.residue << ", altlocs.size(): "<< r.altlocs.size() << endl;
           if( ligandsToFind )
             {
               vector<string>::iterator found1 = find(ligandsToFind->begin(),
@@ -625,7 +646,31 @@ void PDB::getPair(int& resSeq1,
   // and the formate in aa2h just so that I can keep
   // this straight in my head.  This may not be necessary
   // but it helps me when I am looking through the code.
-  if( !ligand )
+
+  if ( !carbonRingLigands.empty() )
+    {
+      Residue *ligand = this->carbonRingLigands[0];
+      for (int i=0; i < ligand->carbonRings[0].size(); i++)
+        {
+          ligand->center.push_back(ligand->carbonRingCenters[0][i]);
+          vector<Atom*> temp;
+          for (int j=0; j < ligand->carbonRings[0][i].size(); j++)
+            {
+              temp.push_back(ligand->carbonRings[0][i][j]);
+            }
+          for (int j=0; j < ligand->additionalAtoms[0][i].size(); j++)
+            {
+              temp.push_back(ligand->additionalAtoms[0][i][j]);
+            }
+          ligand->altlocs.push_back(temp);
+
+      }
+
+      *r1 = *ligand;
+      *r2 = this->chains[0].aa[0];
+    }
+
+  else if( !ligand )
     {
       // If these residues were in different chains
       if( this->chains.size() != 1 )
@@ -677,6 +722,7 @@ void PDB::getPair(int& resSeq1,
       *r1 = this->chains[0].aa[0];
       *r2 = *(this->ligands[0]);
     }
+
 }
 
 void PDB::findLigands(vector<string> ligandsToFind)
@@ -709,7 +755,6 @@ void PDB::findCarbonRingsInLigands()
           // Check if the current residue contains a carbon ring.
           // If it does, store the whole ligand.
           if(this->chains[i].hetatms[j].findCarbonRings()) {
-//cout << "Found a ring!" << endl;
             carbonRingLigands.push_back(&this->chains[i].hetatms[j]);
           }
         }

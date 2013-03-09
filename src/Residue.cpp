@@ -1584,6 +1584,27 @@ vector<Atom*> Residue::findAdditionalAtoms(vector<Atom*> ring, int n_bonds)
         }
     }
 
+  // One last loop to get any leftover hydrogens.
+  for (int i = 0; i < temp.size(); i++)
+    {
+      Atom *first_atom = temp[i];
+      for (int j=0; j < atom.size(); j++)
+        {
+          Atom *other_atom = atom[j];
+
+          if (find(ring.begin(), ring.end(), other_atom) != ring.end() ||
+              find(temp.begin(), temp.end(), other_atom) != temp.end() ||
+              other_atom->altLoc != ring_alt_loc)
+            {
+              continue;
+            }
+          if (other_atom->element_num == H && first_atom->isBonded(*other_atom))
+            {
+              temp.push_back(other_atom);
+            }
+        }
+    }
+
   return temp;
 }
 
@@ -1623,15 +1644,6 @@ bool Residue::findCarbonRings()
               continue;
             }
           float dist = firstCarbon->coord.distance(secondCarbon->coord);
-/*
-cout << "Checking distance between" << endl;
-cout << "  " << firstCarbon->line << endl;
-cout << "  " << secondCarbon->line << endl;
-cout << "-- " << dist << endl << endl;
-*/
-          //cout << "Distance: " << dist << endl;
-
-          
           if (dist >= TARGET_DIST - 0.09 && dist <= TARGET_DIST + 0.09)
             {
               vector<Atom*> pair;
@@ -1642,15 +1654,6 @@ cout << "-- " << dist << endl << endl;
               midpoints.push_back(firstCarbon->coord.midpoint(secondCarbon->coord));
             }
         }
-/*
-cout << endl << "Found the following pairs for " << residue << ":" << endl;
-for (int I=0; I < pairs.size(); I++) {
-  cout << "  " << pairs[I][0]->line << endl;
-  cout << "  " << pairs[I][1]->line << endl;
-  cout << "--" << endl;
-}
-*/
-
     }
 
   // Collect pairs whose midpoints are approximately equal
@@ -1667,7 +1670,6 @@ for (int I=0; I < pairs.size(); I++) {
             {
               index_set.push_back(j);
             }
-          //cout << dist << endl;
         }
       potential_rings.push_back(index_set);
     }
@@ -1741,18 +1743,6 @@ for (int I=0; I < pairs.size(); I++) {
               vector< vector<Atom*> > newAdditionalAtomsVector;
               newAdditionalAtomsVector.push_back(newAdditionalAtoms);
               additionalAtoms.push_back(newAdditionalAtomsVector);
-
-/*
-if (newRing.size() == 0)
-  cout << "What the fucking fuck?" << endl;
-cout << "Found a ring:" << endl;
-for (int I; I<newRing.size(); I++)
-  cout << "\t" << newRing[I]->line << endl;
-cout << "  with additional atoms:" << endl;
-for (int I; I<newAdditionalAtoms.size(); I++)
-  cout << "\t" << newAdditionalAtoms[I]->line << endl;
-cout << endl;
-*/
             }
           else
             {
@@ -1826,22 +1816,10 @@ cout << endl;
                   vector< vector<Atom*> > newAdditionalAtomsVector;
                   newAdditionalAtomsVector.push_back(newAdditionalAtoms);
                   additionalAtoms.push_back(newAdditionalAtomsVector);
-
-
-cout << "Found a ring:" << endl;
-for (int I=0; I<newRing.size(); I++)
-  cout << "\t" << newRing[I]->line << endl;
-cout << "  with additional atoms:" << endl;
-for (int I=0; I<newAdditionalAtoms.size(); I++)
-  cout << "\t" << newAdditionalAtoms[I]->line << endl;
-cout << endl;
-
                 }
-           }
-
+            }
         }
     }
-  //cout << "Found " << pairs.size() << " pairs" << endl;
 
   if (foundRings)
     {
@@ -1903,11 +1881,6 @@ bool Residue::calculateDistancesAndAnglesPostHydrogens(Residue aa2,
                                                          float* angleOxy2)
 {
   Residue aa1 = *this;
-
-//cout << "calculateDistancesAndAnglesPostHydrogens for " << residue << " and " << aa2.residue << endl; 
-//cout << "length of aa1.center[0].plane_info: " << aa1.center[0].plane_info.size() << endl;
-//cout << aa1.center[0].plane_info[0] << " " << endl;
-
 
   // These are the 3 points in the benzene ring determined in centerPHEorTYR_simplified()
   Coordinates dBenzene1 = *aa1.center[0].plane_info[1] - *aa1.center[0].plane_info[0];
@@ -2565,10 +2538,10 @@ string Residue::makeConectCarbonRing(int c)
 {
   string serials[6];
   string conect = "";
-
   for(int i=0; i<this->altlocs[c].size(); i++)
     {
-      conect += "CONECT" + altlocs[c][i]->line.substr(6,5);
+      string temp;
+      temp = "CONECT" + altlocs[c][i]->line.substr(6,5);
 
       int nConnected = 0;
       for(int j=0; j<this->altlocs[c].size(); j++)
@@ -2577,11 +2550,15 @@ string Residue::makeConectCarbonRing(int c)
 
           if (altlocs[c][i]->isBonded(*(altlocs[c][j])))
             {
-              conect += altlocs[c][j]->line.substr(6,5);
+              temp += altlocs[c][j]->line.substr(6,5);
             }
         }
+      int diff = 71 - temp.length() - 1;
+      for (int j=0; j < diff; j++)
+        temp+=" ";
+      temp += "\n";
 
-      conect += "      \n";
+      conect += temp;
     }
   
   return conect;

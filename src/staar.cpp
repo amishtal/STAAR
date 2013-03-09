@@ -534,6 +534,7 @@ void searchCarbonRingLigandsInformation(PDB & PDBfile,
 ///*
   vector<Coordinates> original_center = ligand.center;
   vector< vector<Atom*> > original_altlocs = ligand.altlocs;
+  vector< Atom* > original_atom;
 
   string original_residue = ligand.residue;
 
@@ -542,11 +543,7 @@ void searchCarbonRingLigandsInformation(PDB & PDBfile,
 
   Chain* c1 = &(PDBfile.chains[chain1]);
 
-//cout << "Carbon ring ligand altlocs size: " << ligand.altlocs.size() << endl;
-
-
   stats->setActiveLigand(ligand, QPOLE);
-
 
   // Set skip flag on all ligand atoms
   for(int i=0; i < ligand.atom.size(); i++)
@@ -563,9 +560,6 @@ void searchCarbonRingLigandsInformation(PDB & PDBfile,
           for (int j=0; j<ligand.carbonRingCenters.size(); j++)
             {
               // Ignore all the other carbon ring centers except for the jth.
-
-//              cout << "Looking for interaction between carbon ring " << j << " of " << ligand.residue << " and " << residue2 << endl;
-
               for (int k=0; k<ligand.carbonRingCenters[j].size(); k++)
                 {
                   ligand.center.push_back(ligand.carbonRingCenters[j][k]);
@@ -579,6 +573,10 @@ void searchCarbonRingLigandsInformation(PDB & PDBfile,
                   for (int i=0; i < ligand.additionalAtoms[j][k].size(); i++)
                     {
                       temp.push_back(ligand.additionalAtoms[j][k][i]);
+                    }
+                  for (int i=0; i < temp.size(); i++)
+                    {
+                      temp[i]->skip = false;	
                     }
 
                   ligand.altlocs.push_back(temp);
@@ -710,21 +708,20 @@ bool findBestInteraction( Residue& aa1,
       pairWithHydrogen.filename = PDBfile.filename;
 
       // Separate the pair into 2 variables
-      aa1h = aa1;
-      aa2h = aa2;
-/*
+//      aa1h = aa1;
+//      aa2h = aa2;
+
       pairWithHydrogen.getPair(aa1.atom[0]->resSeq,
                                aa2.atom[0]->resSeq,
                                &aa1h,
                                &aa2h,
                                ligand);
-*/
+
 
       if( aa2h.skip == true || aa1h.skip == true )
         {
           return false;
         }
-
 
       float dist;
       float distOxy;
@@ -750,7 +747,6 @@ bool findBestInteraction( Residue& aa1,
                                       &angle,
                                       &angle1,
                                       &angleP);
-
       // The following is pretty hackish.  For the time being since we don't
       // have an agreement on how to deal with the PO4 ligands completely, 
       // we will take 1 H out at a time and output the GAMESS input file.
@@ -818,11 +814,12 @@ bool findBestInteraction( Residue& aa1,
                 {
                   aa1h.atom[i]->skip = true;
                 }
-              for (int i=0; i<aa1h.altlocs[closestDist_index1].size(); i++)
+              for (int i=0; i<aa1h.altlocs[0].size(); i++)
                 {
-                  aa1h.altlocs[closestDist_index1][i]->skip = false;
+                  aa1h.altlocs[0][i]->skip = false;
                 }
             }
+
 
           // Here, we are outputting the
           if( gamessfolder )
@@ -877,14 +874,33 @@ void outputINPfile(string input_filename, char* filename, Residue& aa1h, Residue
   ofstream inpout(filename);
 
   inpout << INPheader << endl;
-  inpout << " $MOROKM IATM(1)=" << aa1h.atom.size() << ",";
+
+  int qpole_mol_size = 0;
+  for (int i=0; i < aa1h.atom.size(); i++)
+    {
+      if ( !aa1h.atom[i]->skip )
+        {
+          qpole_mol_size += 1;
+        }
+    }
+//  inpout << " $MOROKM IATM(1)=" << aa1h.atom.size() << ",";
+  inpout << " $MOROKM IATM(1)=" << qpole_mol_size << ",";
   if(aa2h.residue == "PO4")
     {
       inpout<< aa2h.atom.size() - 1 << " ICHM(1)=0,-1" << " $END" << endl;
     }
   else
     {
-      inpout<< aa2h.atom.size() << " ICHM(1)=0,-1" << " $END" << endl;
+      int anion_mol_size = 0;
+      for (int i=0; i < aa2h.atom.size(); i++)
+        {
+          if ( !aa2h.atom[i]->skip )
+            {
+              anion_mol_size += 1;
+            }
+        }
+//      inpout<< aa2h.atom.size() << " ICHM(1)=0,-1" << " $END" << endl;
+      inpout<< anion_mol_size << " ICHM(1)=0,-1" << " $END" << endl;
     }
   inpout << " $DATA" << endl;
   inpout << input_filename << endl;
@@ -928,6 +944,11 @@ void outputINPfile(string input_filename, char* filename, Residue& aa1h, Residue
           else if( aa1h.atom[i]->element_num == Br)
             {
               inpout << "Br    35.0     ";
+            }
+          else
+            {
+              cout << "Warning!! Unhandled atom when creating GAMESS input file: "
+                   << aa1h.atom[i]->element << endl;
             }
           inpout << aa1h.atom[i]->coord << endl;
         }

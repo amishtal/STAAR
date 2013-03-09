@@ -280,21 +280,6 @@ ostream& operator<<(ostream& output, const Atom& p)
 
 bool Atom::isBonded(Atom &other)
 {
-/*
-  float MIN_BOND_LENGTH = 1.3;
-  float MAX_BOND_LENGTH = 2.2;
-
-  float dist = coord.distance(other.coord);
-  if (dist > MIN_BOND_LENGTH &&
-      dist < MAX_BOND_LENGTH)
-    {
-      return true;
-    }
-  else
-    {
-      return false;
-    }
-*/
   float dist = coord.distance(other.coord);
   float upper_bound = COVALENT_RADIUS[element_num] +
                       COVALENT_RADIUS[other.element_num] +
@@ -310,12 +295,33 @@ bool Atom::isBonded(Atom &other)
     }
 }
 
+/*
+  If the two atoms have the same resSeq, then the 'smaller'
+  atom has the smaller chainID. Otherwise, if the atoms are
+  both HETATMs or ATOMs, then the 'smaller' atom has the
+  smaller resSeq.  Finally, the ATOMs are 'smaller' than the
+  HETATMs.
+*/
 bool Atom::operator<(const Atom &rhs) const
 {
+  bool ret_val;
   if(this->resSeq == rhs.resSeq)
     {
       return (this->chainID < rhs.chainID);
     }
   else
-    return this->resSeq < rhs.resSeq;
+    {
+      if (line.substr(0, 6) == rhs.line.substr(0, 6))
+        {
+          return this->resSeq < rhs.resSeq;
+        }
+      else if (line.substr(0, 4) == "ATOM")
+        {
+          return true;
+        }
+      else
+        {
+          return false;
+        }
+    }
 }
