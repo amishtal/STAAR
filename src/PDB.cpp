@@ -442,8 +442,10 @@ void PDB::addHydrogensToPair(Residue& a, Residue& b, int cd1, int cd2)
       string f = "";
       while( getline(tempss,line) )
         {
-          if( line.find(a.residue.substr(0, 3)) != string::npos )
+          if( line.find(a.residue.substr(0, 3)) != string::npos &&
+              line.find("ATOM") == 0 )
             {
+cout << "A: In line: " << line << ", replacing " << a.residue.substr(0,3) << " with HETATM" << endl;
               line.replace(0,6,"HETATM");
             }
           f += line + "\n";
@@ -458,8 +460,10 @@ void PDB::addHydrogensToPair(Residue& a, Residue& b, int cd1, int cd2)
       string f = "";
       while( getline(tempss,line) )
         {
-          if( line.find(b.residue.substr(0, 3)) != string::npos )
+          if( line.find(b.residue.substr(0, 3)) != string::npos &&
+              line.find("ATOM") == 0 )
             {
+cout << "B: In line: " << line << ", replacing " << a.residue.substr(0,3) << " with HETATM" << endl;
               line.replace(0,6,"HETATM");
             }
           f += line + "\n";

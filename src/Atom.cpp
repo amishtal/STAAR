@@ -128,6 +128,7 @@ void Atom::parseAtom(string line, int num)
   if(this->line.length() != 80)
     {
       cerr << red << "Error" << reset << ": Possible malformed PDB file on ATOM/HETATM line " << num << "." << endl;
+cout << line << endl;
       failure = true;
     }
 
