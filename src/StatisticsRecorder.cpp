@@ -44,9 +44,14 @@ class StatisticsRecorder::LigandRecord : public StatisticsRecorder::Record
 
     LigandRecord(Residue &ligand)
     {
-      name = ligand.residue;
-      n_qpoles = 0;
+      // Strip a possible added ring number
+      size_t pos = ligand.residue.find_last_of('_');
+      name = ligand.residue.substr(0, pos-1);
+
+      n_qpoles = ligand.carbonRings.size();
       n_anions = 0;
+      if (n_qpoles == 0)
+        n_anions = 1;
     }
 
 };
@@ -84,15 +89,30 @@ class StatisticsRecorder::ProteinRecord : public StatisticsRecorder::Record
     }
 };
 
-
-
-// Standard Constructor
-/*
-StatisticsRecorder::StatisticsRecorder() 
+class StatisticsRecorder::InteractionRecord
 {
-  
-}
-*/
+  private:
+  public:
+    string protein_name;
+    string qpole_name;
+    string anion_name;
+
+    MoleculeType qpole_type;
+    MoleculeType anion_type;
+
+    InteractionRecord(string p_name, string q_name, MoleculeType q_type,
+                                     string a_name, MoleculeType a_type)
+    {
+      protein_name = p_name;
+      qpole_name = q_name;
+      qpole_type = q_type;
+      anion_name = a_name;
+      anion_type = a_type;
+    }
+};
+
+
+
 
 bool StatisticsRecorder::isNewProtein(string name)
 {
@@ -201,7 +221,9 @@ void StatisticsRecorder::setActiveResidue(Residue &residue, MoleculeRole role)
 
 void StatisticsRecorder::setActiveLigand(Residue &ligand, MoleculeRole role)
 {
-  string name = ligand.residue;
+  // String a possible ring number at the end
+  size_t pos = ligand.residue.find_last_of('_');
+  string name = ligand.residue.substr(0, pos-1);
 
   if (isNewLigand(name))
     {
@@ -224,5 +246,51 @@ void StatisticsRecorder::setActiveLigand(Residue &ligand, MoleculeRole role)
 
 void StatisticsRecorder::recordNewInteraction(int qpole_center_idx, int anion_center_idx)
 {
-  
+  n_total_interactions++;
+
+  cerr << "New interaction between QPOLE " << active_qpole << " and ANION " << active_anion << endl;
+  interactions.push_back(new InteractionRecord(active_protein, active_qpole, active_qpole_type,
+                                                               active_anion, active_anion_type));
+
+  // Increment a global counter?
+  // Increment a counter for each ligand/residue/protein record?
+  // Record each interaction? What information to keep?
+}
+
+int StatisticsRecorder::getTotalNumberOfInteractions()
+{
+  return interactions.size();
+}
+
+double StatisticsRecorder::averageInteractionsPerProtein()
+{
+  return (double)interactions.size() / (double)proteins.size();
+}
+
+vector<int> StatisticsRecorder::carbonRingLigandCounts()
+{
+  vector<int> counts; // <n_rings, count>
+
+  vector<InteractionRecord *>::iterator it;
+
+  for (it = interactions.begin(); it != interactions.end(); it++)
+    {
+      string ligand_name;
+      int n_rings = 0;
+      InteractionRecord *ir = *it;
+
+      if (ir->qpole_type == LIGAND)
+        {
+          LigandRecord *ligand = ligands[ir->qpole_name];
+          n_rings = ligand->n_qpoles;
+
+          if (counts.size() < n_rings)
+            {
+              counts.resize(n_rings);
+            }
+          counts[n_rings-1]++;
+        }
+    }
+
+  return counts;
 }

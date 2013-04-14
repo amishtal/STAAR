@@ -5,6 +5,7 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <vector>
 
 #include "Residue.hpp"
 
@@ -20,6 +21,7 @@ class StatisticsRecorder
     class LigandRecord;
     class ResidueRecord;
     class ProteinRecord;
+    class InteractionRecord;
     /*
     class Record {
       private:
@@ -46,6 +48,7 @@ class StatisticsRecorder
     }
     */
 
+    unsigned int n_total_interactions;
     
     unsigned int n_proteins;
     unsigned int n_ligands;
@@ -53,6 +56,7 @@ class StatisticsRecorder
     map<string, ProteinRecord *> proteins;
     map<string, ResidueRecord *> residues;
     map<string, LigandRecord  *> ligands;
+    vector<InteractionRecord  *> interactions;
 
     //ProteinRecord* active_protein;
     string active_protein;
@@ -78,7 +82,10 @@ class StatisticsRecorder
     string getActiveProteinName();
 
     void recordNewInteraction(int qpole_center_idx, int anion_center_idx);
-    
+
+    int getTotalNumberOfInteractions();
+    double averageInteractionsPerProtein();
+    vector<int> carbonRingLigandCounts();
 
 };
 

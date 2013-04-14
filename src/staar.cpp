@@ -40,6 +40,7 @@
 
 #include <cstdlib>
 #include <cstdio>
+#include <iomanip>
 #include <iostream>
 #include <fstream>
 #include <float.h>
@@ -172,6 +173,17 @@ int main(int argc, char* argv[]){
     }
 
   cout << "Time taken: " << getTime() - start << "s" << endl;
+  cout << "Total interactions: " << stats->getTotalNumberOfInteractions() << endl;
+  cout << "Average interactions per protein: " << stats->averageInteractionsPerProtein() << endl;
+
+  cout << "Interactions involving ligands with carbon rings:" << endl;
+  cout << setw(14) << "# Rings" << "  " << setw(14) << "# Interactions" << endl;
+  vector<int> ring_counts = stats->carbonRingLigandCounts();
+  for (int i=0; i < ring_counts.size(); i++)
+    {
+      cout << setw(14) << i+1 << "  " << setw(14) << ring_counts[i] << endl;
+    }
+
   return !return_value;
 }
 
@@ -200,7 +212,7 @@ bool processSinglePDBFile(const char* filename,
 
 
   stats->setActiveProtein(PDBfile_whole.idCode);
-  cout << stats->getActiveProteinName() << endl;
+//cout << stats->getActiveProteinName() << endl;
 
   for(unsigned int model=0; model < PDBfile_whole.models.size(); model++)
     {
@@ -588,13 +600,18 @@ void searchCarbonRingLigandsInformation(PDB & PDBfile,
               ring_num << j;
               ligand.residue = original_residue + "_" + ring_num.str();
 
-              findBestInteraction(ligand,
-                                  c1->aa[i],
-                                  opts.threshold,
-                                  PDBfile,
-                                  opts.gamessfolder,
-                                  false,
-                                  output_file);
+              bool found;
+              found = findBestInteraction(ligand,
+                                          c1->aa[i],
+                                          opts.threshold,
+                                          PDBfile,
+                                          opts.gamessfolder,
+                                          false,
+                                          output_file);
+              if (found)
+                {
+                  stats->recordNewInteraction(0,0);
+                }
               ligand.center.clear();
               ligand.altlocs.clear();
 
