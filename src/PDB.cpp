@@ -445,7 +445,6 @@ void PDB::addHydrogensToPair(Residue& a, Residue& b, int cd1, int cd2)
           if( line.find(a.residue.substr(0, 3)) != string::npos &&
               line.find("ATOM") == 0 )
             {
-cout << "A: In line: " << line << ", replacing " << a.residue.substr(0,3) << " with HETATM" << endl;
               line.replace(0,6,"HETATM");
             }
           f += line + "\n";
@@ -463,7 +462,6 @@ cout << "A: In line: " << line << ", replacing " << a.residue.substr(0,3) << " w
           if( line.find(b.residue.substr(0, 3)) != string::npos &&
               line.find("ATOM") == 0 )
             {
-cout << "B: In line: " << line << ", replacing " << a.residue.substr(0,3) << " with HETATM" << endl;
               line.replace(0,6,"HETATM");
             }
           f += line + "\n";
