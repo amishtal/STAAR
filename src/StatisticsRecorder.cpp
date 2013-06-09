@@ -20,14 +20,6 @@ class StatisticsRecorder::Record
   public:
     string name;
 
-
-/*
-    StatisticsRecorder::Record::Record(string init_name)
-    {
-      name = name;
-    }
-*/
-
     bool operator==(Record &rhs)
     {
       return (name == rhs.name);
@@ -39,10 +31,23 @@ class StatisticsRecorder::LigandRecord : public StatisticsRecorder::Record
 {
   private:
   public:
-    unsigned int n_qpoles;
-    unsigned int n_anions;
+    uint n_qpoles;
+    uint n_anions;
 
-    LigandRecord(Residue &ligand)
+    // Set of protein names and residue numbers
+    // that uniquely identify an instance of this
+    // ligand.
+    set< pair<string, uint> > instances;
+
+    // Record a new instance. Returns whether or not this instance
+    // has already been recorded.
+    bool addInstance(string protein_name, uint residue_num)
+    {
+      return (instances.insert(make_pair(protein_name, residue_num))).second;
+    }
+
+
+    LigandRecord(Residue &ligand, string protein, uint residue_num)
     {
       // Strip a possible added ring number
       size_t pos = ligand.residue.find_last_of('_');
@@ -52,6 +57,8 @@ class StatisticsRecorder::LigandRecord : public StatisticsRecorder::Record
       n_anions = 0;
       if (n_qpoles == 0)
         n_anions = 1;
+
+      addInstance(protein, residue_num);
     }
 
 };
@@ -60,8 +67,20 @@ class StatisticsRecorder::ResidueRecord : public StatisticsRecorder::Record
 {
   private:
   public:
-    unsigned int n_qpoles;
-    unsigned int n_anions;
+    uint n_qpoles;
+    uint n_anions;
+
+    // Set of protein names and residue numbers
+    // that uniquely identify an instance of this
+    // residue.
+    set< pair<string, uint> > instances;
+
+    // Record a new instance. Returns whether or not this instance
+    // has already been recorded.
+    bool addInstance(string protein_name, uint residue_num)
+    {
+      return (instances.insert(make_pair(protein_name, residue_num))).second;
+    }
 
     ResidueRecord(Residue &residue)
     {
@@ -197,7 +216,7 @@ void StatisticsRecorder::setActiveModel(string name)
 
 }
 
-void StatisticsRecorder::setActiveResidue(Residue &residue, MoleculeRole role)
+void StatisticsRecorder::setActiveResidue(Residue &residue, uint residue_num, MoleculeRole role)
 {
   string name = residue.residue;
 
@@ -219,7 +238,7 @@ void StatisticsRecorder::setActiveResidue(Residue &residue, MoleculeRole role)
     }
 }
 
-void StatisticsRecorder::setActiveLigand(Residue &ligand, MoleculeRole role)
+void StatisticsRecorder::setActiveLigand(Residue &ligand, uint residue_num, MoleculeRole role)
 {
   // String a possible ring number at the end
   size_t pos = ligand.residue.find_last_of('_');
@@ -228,8 +247,20 @@ void StatisticsRecorder::setActiveLigand(Residue &ligand, MoleculeRole role)
   if (isNewLigand(name))
     {
       cout << "NEW LIGAND: " << name << endl;
-      LigandRecord *newLigand = new LigandRecord(ligand);
+      LigandRecord *newLigand = new LigandRecord(ligand, active_protein, residue_num);
       ligands.insert(pair<string, LigandRecord *>(name, newLigand));
+    }
+  else
+    {
+      map<string, LigandRecord *>::iterator it1 = ligands.find(name);
+      LigandRecord *ligand = it1->second;
+
+      pair<string, uint> temp_pair = make_pair(active_protein, residue_num);
+      set< pair<string, uint> >::iterator it2 = ligand->instances.find(temp_pair);
+      if (it2 == ligand->instances.end()) // New instance
+        {
+          ligand->instances.insert(temp_pair);
+        }
     }
 
   if (role == ANION)
@@ -251,10 +282,6 @@ void StatisticsRecorder::recordNewInteraction(int qpole_center_idx, int anion_ce
   cerr << "New interaction between QPOLE " << active_qpole << " and ANION " << active_anion << endl;
   interactions.push_back(new InteractionRecord(active_protein, active_qpole, active_qpole_type,
                                                                active_anion, active_anion_type));
-
-  // Increment a global counter?
-  // Increment a counter for each ligand/residue/protein record?
-  // Record each interaction? What information to keep?
 }
 
 int StatisticsRecorder::getTotalNumberOfInteractions()
@@ -267,15 +294,49 @@ double StatisticsRecorder::averageInteractionsPerProtein()
   return (double)interactions.size() / (double)proteins.size();
 }
 
+
+/**
+  Counts how many instances of each ligand that contains carbon rings
+   have been recorded. Counts are binned by the number of carbon rings.
+**/
 vector<int> StatisticsRecorder::carbonRingLigandCounts()
 {
-  vector<int> counts; // <n_rings, count>
+  vector<int> counts;
+
+
+  map<string, LigandRecord *>::iterator it;
+
+  for (it = ligands.begin(); it != ligands.end(); it++)
+    {
+      int n_rings = 0;
+      LigandRecord *ligand = it->second;
+
+      n_rings = ligand->n_qpoles;
+
+      if (counts.size() < n_rings)
+        {
+          counts.resize(n_rings);
+        }
+      counts[n_rings-1] += ligand->instances.size();
+    }
+
+  return counts;
+}
+
+/**
+  Counts how many interactions have been recorded that involve
+   ligands with carbon rings. Counts are binned by the number of
+   carbon rings.
+  
+**/
+vector<int> StatisticsRecorder::carbonRingLigandInteractionCounts()
+{
+  vector<int> counts; 
 
   vector<InteractionRecord *>::iterator it;
 
   for (it = interactions.begin(); it != interactions.end(); it++)
     {
-      string ligand_name;
       int n_rings = 0;
       InteractionRecord *ir = *it;
 
