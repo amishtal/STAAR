@@ -2733,6 +2733,16 @@ void Residue::printNeededAtoms(FILE* output)
     }
 }
 
+unsigned int Residue::getResidueNumber()
+{
+  if (atom.size() == 0)
+    {
+      cerr << red << "Error" << reset << ": Residue has no atoms" << endl;
+      exit(1);
+    }
+  return atom[0]->resSeq;
+}
+
 ostream& operator<<(ostream& output, const Residue& p) 
 {
   for(int i=0; i < p.atom.size(); i++)

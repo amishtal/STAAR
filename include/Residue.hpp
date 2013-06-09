@@ -183,6 +183,10 @@ public:
   // to the GLU and ASP residues
   bool removeExcessHydrogens(vector<string> conect);
 
+
+  // Print the residue number
+  unsigned int getResidueNumber(); 
+
   vector< vector<Atom*> > altlocs;
 
   // this holds pointers to the ATOM strings
