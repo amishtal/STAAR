@@ -176,12 +176,17 @@ int main(int argc, char* argv[]){
   cout << "Total interactions: " << stats->getTotalNumberOfInteractions() << endl;
   cout << "Average interactions per protein: " << stats->averageInteractionsPerProtein() << endl;
 
-  cout << "Interactions involving ligands with carbon rings:" << endl;
-  cout << setw(14) << "# Rings" << "  " << setw(14) << "# Interactions" << endl;
+  vector<int> ring_interaction_counts = stats->carbonRingLigandInteractionCounts();
   vector<int> ring_counts = stats->carbonRingLigandCounts();
+  if (ring_counts.size() != ring_interaction_counts.size())
+    {
+      ring_interaction_counts.resize(ring_counts.size());
+    }
+  cout << "Interactions involving ligands with carbon rings:" << endl;
+  cout << setw(7) << "# Rings" << "  " << setw(14) << "# Interactions" << "  " << setw(15) << "# Total Ligands" << endl;
   for (int i=0; i < ring_counts.size(); i++)
     {
-      cout << setw(14) << i+1 << "  " << setw(14) << ring_counts[i] << endl;
+      cout << setw(7) << i+1 << "  " << setw(14) << ring_interaction_counts[i] << "  " << setw(15) << ring_counts[i] << endl;
     }
 
   return !return_value;
@@ -555,7 +560,7 @@ void searchCarbonRingLigandsInformation(PDB & PDBfile,
 
   Chain* c1 = &(PDBfile.chains[chain1]);
 
-  stats->setActiveLigand(ligand, QPOLE);
+  stats->setActiveLigand(ligand, ligand.getResidueNumber(), QPOLE);
 
   // Set skip flag on all ligand atoms
   for(int i=0; i < ligand.atom.size(); i++)
@@ -567,7 +572,7 @@ void searchCarbonRingLigandsInformation(PDB & PDBfile,
     {
       if(c1->aa[i].residue == residue2 && !(c1->aa[i].skip))
         {
-          stats->setActiveResidue(c1->aa[i], ANION);
+          stats->setActiveResidue(c1->aa[i], c1->aa[i].getResidueNumber(), ANION);
 
           for (int j=0; j<ligand.carbonRingCenters.size(); j++)
             {
@@ -764,6 +769,32 @@ bool findBestInteraction( Residue& aa1,
                                       &angle,
                                       &angle1,
                                       &angleP);
+      // Construct the atom number strings
+      stringstream res1_atoms;
+      vector<Atom *> res1_atoms_vector = aa1.altlocs[0];//[closestDist_index1];
+      sort(res1_atoms_vector.begin(), res1_atoms_vector.end());
+      for (int i=0; i < res1_atoms_vector.size(); i++)
+        {
+          if (i > 0) res1_atoms << " ";
+          res1_atoms << res1_atoms_vector[i]->serialNumber;
+        }
+
+      stringstream res2_atoms;
+      vector<Atom *> res2_atoms_vector = aa2.altlocs[0];//[closestDist_index2];
+      sort(res2_atoms_vector.begin(), res2_atoms_vector.end());
+      for (int i=0; i < res2_atoms_vector.size(); i++)
+        {
+          if (i > 0) res2_atoms << " ";
+          res2_atoms << res2_atoms_vector[i]->serialNumber;
+        }
+
+      // Get the number of carbon rings each residue has
+      int res1_nrings = aa1.carbonRings.size();
+      if (res1_nrings == 0 && aa1.residue == "PHE") res1_nrings = 1;
+
+      int res2_nrings = aa2.carbonRings.size();
+      if (res2_nrings == 0 && aa2.residue == "PHE") res2_nrings = 1;
+
       // The following is pretty hackish.  For the time being since we don't
       // have an agreement on how to deal with the PO4 ligands completely, 
       // we will take 1 H out at a time and output the GAMESS input file.
@@ -815,7 +846,24 @@ bool findBestInteraction( Residue& aa1,
                               << distOxy2                           << ","
                               << angleh                             << ","
                               << angleOxy                           << ","
-                              << angleOxy2                          << endl;
+                              << angleOxy2                          << ","
+                              << " "                                << ","
+                              << " "                                << ","
+                              << " "                                << ","
+                              << " "                                << ","
+                              << " "                                << ","
+                              << " "                                << ","
+                              << " "                                << ","
+                              << " "                                << ","
+                              << " "                                << ","
+                              << " "                                << ","
+                              << " "                                << ","
+                              << " "                                << ","
+                              << " "                                << ","
+                              << res1_atoms.str()                   << ","
+                              << res2_atoms.str()                   << ","
+                              << res1_nrings                        << ","
+                              << res2_nrings                        << endl;
                   (*atom_iterator)->skip = false;
                   if(count == 2) break;
                   ++count;
@@ -875,7 +923,24 @@ bool findBestInteraction( Residue& aa1,
                       << distOxy2                           << ","
                       << angleh                             << ","
                       << angleOxy                           << ","
-                      << angleOxy2                          << endl;
+                      << angleOxy2                          << ","
+                      << " "                                << ","
+                      << " "                                << ","
+                      << " "                                << ","
+                      << " "                                << ","
+                      << " "                                << ","
+                      << " "                                << ","
+                      << " "                                << ","
+                      << " "                                << ","
+                      << " "                                << ","
+                      << " "                                << ","
+                      << " "                                << ","
+                      << " "                                << ","
+                      << " "                                << ","
+                      << res1_atoms.str()                   << ","
+                      << res2_atoms.str()                   << ","
+                      << res1_nrings                        << ","
+                      << res2_nrings                        << endl;
         }
 
       return true;
@@ -1000,5 +1065,6 @@ void outputINPfile(string input_filename, char* filename, Residue& aa1h, Residue
 
 void write_output_head(ofstream& out)
 {
-  out <<"#res1,res2,dist,angle,angleP,angle1,loc1,loc2,code,pdbID,resolution,model,gamessinput,chain1,chain2,center1,,,center2,,,center1h,,,center2h,,,dist,distOxy,distOxy2,angleh,angleOxy,angleOxy2,gamessoutput,electrostatic(Hartree),electrostatic(kcal/mol),exchangerep(Hartree),exchangerep(kcal/mole),polarization(Hartree),polarization(kcal/mole),chargexfer(Hartree),chargexfer(kcal/mol),highordercoup(Hartree),highordercoup(kcal/mole),totalinter(Hartree),totalinter(kcal/mole)" << endl;
+  //out <<"#res1,res2,dist,angle,angleP,angle1,loc1,loc2,code,pdbID,resolution,model,gamessinput,chain1,chain2,center1,,,center2,,,center1h,,,center2h,,,dist,distOxy,distOxy2,angleh,angleOxy,angleOxy2,gamessoutput,electrostatic(Hartree),electrostatic(kcal/mol),exchangerep(Hartree),exchangerep(kcal/mole),polarization(Hartree),polarization(kcal/mole),chargexfer(Hartree),chargexfer(kcal/mol),highordercoup(Hartree),highordercoup(kcal/mole),totalinter(Hartree),totalinter(kcal/mole)" << endl;
+  out <<"#res1,res2,dist,angle,angleP,angle1,loc1,loc2,code,pdbID,resolution,model,gamessinput,chain1,chain2,center1,,,center2,,,center1h,,,center2h,,,dist,distOxy,distOxy2,angleh,angleOxy,angleOxy2,gamessoutput,electrostatic(Hartree),electrostatic(kcal/mol),exchangerep(Hartree),exchangerep(kcal/mole),polarization(Hartree),polarization(kcal/mole),chargexfer(Hartree),chargexfer(kcal/mol),highordercoup(Hartree),highordercoup(kcal/mole),totalinter(Hartree),totalinter(kcal/mole),res1Atoms,res2Atoms,res1_#rings,res2_#rings" << endl;
 }
